@@ -166,9 +166,9 @@ class Coap:
 
     def start(self, port=_COAP_DEFAULT_PORT):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        self.sock.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sockaddr = socket.getaddrinfo('127.0.0.1', port)[0][-1]
-        self.sock.bind(sockaddr)
+        # self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # sockaddr = socket.getaddrinfo('127.0.0.1', port)[0][-1]
+        # self.sock.bind(sockaddr)
 
     def stop(self):
         if self.sock is not None:
