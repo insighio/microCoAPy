@@ -1,6 +1,6 @@
 import usocket as socket
 import ustruct as struct
-import random
+import uos
 from ubinascii import hexlify
 
 # Macros
@@ -101,20 +101,24 @@ COAP_CONTENT_TYPE = enum(
 class CoapOption:
     def __init__(self, number=-1, buffer=None):
         self.number = number
-        # self.length = -1 -> will be replaced by len(self.buffer)
-        self.buffer = buffer
+        byteBuf = bytearray()
+        byteBuf.extend(buffer)
+        self.buffer = byteBuf
+
+    def __str__(self):
+        return "Opt(number:{0}, buffer:{1})".format(self.number, self.buffer)
 
 
 class CoapPacket:
     def __init__(self):
-        type = COAP_TYPE.COAP_CON  # uint8_t
-        code = COAP_METHOD.COAP_GET  # uint8_t
-        token = bytearray()
-        payload = bytearray()
-        messageid = 0
-        contentType = COAP_CONTENT_TYPE.COAP_NONE
-        query = bytearray()  # uint8_t*
-        options = []
+        self.type = COAP_TYPE.COAP_CON  # uint8_t
+        self.code = COAP_METHOD.COAP_GET  # uint8_t
+        self.token = bytearray()
+        self.payload = bytearray()
+        self.messageid = 0
+        self.contentType = COAP_CONTENT_TYPE.COAP_NONE
+        self.query = bytearray()  # uint8_t*
+        self.options = []
 
     def addOption(self, number, opt_payload):
         if(len(self.options) >= _MAX_OPTION_NUM):
@@ -122,11 +126,21 @@ class CoapPacket:
         self.options.append(CoapOption(number, opt_payload))
 
     def setUriHost(self, address):
-        self.addOption(COAP_RESPONSE_CODE.COAP_URI_HOST, address)
+        self.addOption(COAP_OPTION_NUMBER.COAP_URI_HOST, address)
 
     def setUriPath(self, url):
         for subPath in url.split('/'):
-            self.addOption(COAP_RESPONSE_CODE.COAP_URI_PATH, subPath)
+            self.addOption(COAP_OPTION_NUMBER.COAP_URI_PATH, subPath)
+
+    def __str__(self):
+        tmpStr = "\n\ttype: {0}\n\tcode: {1}\n\ttoken: {2}\n\tpayload: {3}\n\tmessageid: {4}\n\tcontentType: {5}\n\tquery: {6}".format(
+            self.type, self.code, self.token, self.payload, self.messageid, self.contentType, self.query
+            )
+        tmpStr += '\n\toptions: ['
+        for opt in self.options:
+            tmpStr += str(opt)
+        tmpStr += ']'
+        return tmpStr
 
 
 # probably unessasary
@@ -152,12 +166,14 @@ class Coap:
 
     def start(self, port=_COAP_DEFAULT_PORT):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
-        server_address = ('localhost', port)
-        self.sock.bind(server_address)
+        self.sock.s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sockaddr = socket.getaddrinfo('127.0.0.1', port)[0][-1]
+        self.sock.bind(sockaddr)
 
     def stop(self):
         if self.sock is not None:
             self.sock.close()
+            self.sock = None
 
     def sendPacket(self, ip, port, coapPacket):
         # the packet must be less than the MTU
@@ -185,15 +201,19 @@ class Coap:
 
         # make option header
         for opt in coapPacket.options:
-            if ((opt.buffer is None) or (len(opt.buffer) == 0)) or (packetSize + 5 + len(opt.buffer) >= _BUF_MAX_SIZE):
-                return 0
+            if (opt is None) or (opt.buffer is None) or (len(opt.buffer) == 0):
+                continue
 
             optBufferLen = len(opt.buffer)
+
+            if (packetSize + 5 + optBufferLen) >= _BUF_MAX_SIZE:
+                return 0
+
             optdelta = opt.number - runningDelta
             delta = CoapOptionDelta(optdelta)
-            len = CoapOptionDelta(optBufferLen)
+            length = CoapOptionDelta(optBufferLen)
 
-            buffer.append(0xFF & (delta << 4 | len))
+            buffer.append(0xFF & (delta << 4 | length))
             if (delta == 13):
                 buffer.append(optdelta - 13)
                 packetSize += 1
@@ -202,10 +222,10 @@ class Coap:
                 buffer.append(0xFF & (optdelta - 269))
                 packetSize += 2
 
-            if (len == 13):
+            if (length == 13):
                 buffer.append(optBufferLen - 13)
                 packetSize += 1
-            elif (len == 14):
+            elif (length == 14):
                 buffer.append(optBufferLen >> 8)
                 buffer.append(0xFF & (optBufferLen - 269))
                 packetSize += 2
@@ -225,11 +245,14 @@ class Coap:
         print('Senging Packet: ', hex(len(buffer)), "> ", hexlify(buffer, ":"))
         status = 0
         try:
-            status = self.sock.sendto(buffer, (ip, port))
+            sockaddr = socket.getaddrinfo(ip, port)[0][-1]
+            status = self.sock.sendto(buffer, sockaddr)
             print('Packet sent. Status: ', status)
         except Exception as e:
             status = 0
-            print('Exception while sending packet...', e)
+            print('Exception while sending packet...')
+            import sys
+            sys.print_exception(e)
 
         return status
 
@@ -247,20 +270,22 @@ class Coap:
     def sendEx(self, ip, port, url, packet):
         packet.optionnum = 0
         # messageId field: 16bit -> 0-65535
-        packet.messageid = random.randint(0, 65535)
+        # urandom to generate 2 bytes
+        randBytes = uos.urandom(2)
+        packet.messageid = (randBytes[0] << 8) | randBytes[1]
         packet.setUriHost(ip)
         packet.setUriPath(url)
 
         if packet.contentType != COAP_CONTENT_TYPE.COAP_NONE:
             optionBuffer = bytearray(2)
-            struct.pack_into("!H", optionBuffer, 0, packet.contentType)
-            struct.pack_into("!H", optionBuffer, 1, packet.contentType)
-            optionBuffer[0] = (optionBuffer[0] & 0xFF00) >> 8
-            optionBuffer[1] = (optionBuffer[1] & 0x00FF)
+            optionBuffer[0] = (packet.contentType & 0xFF00) >> 8
+            optionBuffer[1] = (packet.contentType & 0x00FF)
             packet.addOption(COAP_OPTION_NUMBER.COAP_CONTENT_FORMAT, optionBuffer)
 
         if (packet.query is not None) and (len(packet.query) > 0):
             packet.addOption(COAP_OPTION_NUMBER.COAP_URI_QUERY, packet.query)
+
+        print('Packet formed: ', str(packet))
 
         return self.sendPacket(ip, port, packet)
 
