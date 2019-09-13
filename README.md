@@ -1,4 +1,4 @@
-# microCoAP (Work In progress!)
+# microCoAPy (Work In progress!)
 A mini implementation of CoAP (Constrained Application Protocol) into MicroPython
 
 It is a port of an Arduino C++ library [CoAP-simple-library](https://github.com/hirotakaster/CoAP-simple-library) into MicroPython. 
