@@ -1,6 +1,6 @@
 from network import WLAN
 import machine
-import ucoap.ucoap as ucoap
+import microcoapy.microcoapy as microcoapy
 
 wlan = WLAN(mode=WLAN.STA)
 
@@ -23,7 +23,7 @@ for net in nets:
 if not wlan.isconnected():
     print("no network found")
 else:
-    client = ucoap.Coap()
+    client = microcoapy.Coap()
     try:
         print('Starting CoAP client...')
         client.start()
@@ -39,6 +39,6 @@ else:
                                    _COAP_URL,
                                    message,
                                    None,
-                                   ucoap.COAP_CONTENT_TYPE.COAP_TEXT_PLAIN)
+                                   microcoapy.COAP_CONTENT_TYPE.COAP_TEXT_PLAIN)
     print("Sent bytes: ", bytesTransferred)
     client.stop()
