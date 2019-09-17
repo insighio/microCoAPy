@@ -405,14 +405,54 @@ class Coap:
     def readBytesFromSocket(self, numOfBytes):
         try:
             return self.sock.recvfrom(numOfBytes)
-        except Exception as e:
+        except Exception:
             return (None, None)
 
-    def loop(self):
+    def parsePacketHeaderInfo(self, buffer, packet):
+        packet.type = (buffer[0] & 0x30) >> 4
+        packet.tokenLength = buffer[0] & 0x0F
+        packet.code = buffer[1]
+        packet.messageid = 0xFF00 & (buffer[2] << 8)
+        packet.messageid |= 0x00FF & buffer[3]
+
+    def parsePacketToken(self, buffer, packet):
+        if (packet.tokenLength == 0):
+            packet.token = None
+        elif (packet.tokenLength <= 8):
+            packet.token = buffer[4:packet.tokenLength]
+        else:
+            (tempBuffer, tempRemoteAddress) = self.readBytesFromSocket(_BUF_MAX_SIZE - bufferLen)
+            if tempBuffer is not None:
+                buffer.extend(tempBuffer)
+            return False
+        return True
+
+    def parsePacketOptions(self, buffer, packet):
+        bufferLen = len(buffer)
+        if (_COAP_HEADER_SIZE + packet.tokenLength) < bufferLen:
+            delta = 0
+            bufferIndex = _COAP_HEADER_SIZE + packet.tokenLength
+            while (len(packet.options) < _MAX_OPTION_NUM) and\
+                  (bufferIndex < bufferLen) and\
+                  (buffer[bufferIndex] != 0xFF):
+                (status, delta, bufferIndex) = self.parseOption(packet, delta, buffer, bufferIndex)
+                if status is False:
+                    return False
+            packet.optionnum = len(packet.options)
+
+            if ((bufferIndex + 1) < bufferLen) and (buffer[bufferIndex] == 0xFF):
+                packet.payload = buffer[bufferIndex+1:]  # does this works?
+            else:
+                packet.payload = None
+        return True
+
+
+    def loop(self, blocking=True):
         hasReceivedPacket = False
         if self.sock is None:
             return False
 
+        self.sock.setblocking(blocking)
         (buffer, remoteAddress) = self.readBytesFromSocket(_BUF_MAX_SIZE)
         self.sock.setblocking(True)
 
@@ -425,39 +465,14 @@ class Coap:
                 continue
 
             packet = CoapPacket()
-            packet.type = (buffer[0] & 0x30) >> 4
-            packet.tokenLength = buffer[0] & 0x0F
-            packet.code = buffer[1]
-            packet.messageid = 0xFF00 & (buffer[2] << 8)
-            packet.messageid |= 0x00FF & buffer[3]
 
-            if (packet.tokenLength == 0):
-                packet.token = None
-            elif (packet.tokenLength <= 8):
-                packet.token = buffer[4:packet.tokenLength]
-            else:
-                (tempBuffer, tempRemoteAddress) = self.readBytesFromSocket(_BUF_MAX_SIZE - bufferLen)
-                if tempBuffer is not None:
-                    buffer.extend(tempBuffer)
+            self.parsePacketHeaderInfo(buffer, packet)
+
+            if not self.parsePacketToken(buffer, packet):
                 continue
 
-            if(_COAP_HEADER_SIZE + packet.tokenLength < bufferLen):
-                delta = 0
-                bufferIndex = _COAP_HEADER_SIZE + packet.tokenLength
-                while (len(packet.options) < _MAX_OPTION_NUM) and\
-                      (bufferIndex < bufferLen) and\
-                      (buffer[bufferIndex] != 0xFF):
-                    (status, delta, bufferIndex) = self.parseOption(packet, delta, buffer, bufferIndex)
-                    if status is False:
-                        return hasReceivedPacket
-                packet.optionnum = len(packet.options)
-
-                if ((bufferIndex + 1) < bufferLen) and (buffer[bufferIndex] == 0xFF):
-                    packet.payload = buffer[bufferIndex+1:]  # does this works?
-                else:
-                    packet.payload = None
-
-            hasReceivedPacket = True
+            if not self.parsePacketOptions(buffer, packet):
+                return False
 
             if packet.type == COAP_TYPE.COAP_ACK:
                 if self.resposeCallback is not None:
@@ -468,12 +483,10 @@ class Coap:
             # deactivated for now - read only one packet per call
             # next packet
             # (buffer, remoteAddress) = self.sock.recvfrom(_BUF_MAX_SIZE)
-            return hasReceivedPacket
-        return hasReceivedPacket
+            return True  
+        return False
 
     def poll(self, timeoutMs=-1):
-        self.sock.setblocking(False)
         start_time = time.ticks_ms()
-        while not self.loop() and (time.ticks_diff(time.ticks_ms(), start_time)):
-            self.sock.setblocking(False)
+        while not self.loop(False) and (time.ticks_diff(time.ticks_ms(), start_time)):
             time.sleep_ms(10)
