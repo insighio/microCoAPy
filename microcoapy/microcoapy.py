@@ -2,6 +2,7 @@ import usocket as socket
 import uos
 from ubinascii import hexlify
 import utime as time
+import errno
 
 # Macros
 _COAP_HEADER_SIZE = 4
@@ -371,20 +372,56 @@ class Coap:
     def post(self, ip, port, url, payload=bytearray(), queryOption=None, contentType=COAP_CONTENT_TYPE.COAP_NONE):
         return self.send(ip, port, url, COAP_TYPE.COAP_CON, COAP_METHOD.COAP_POST, None, payload, contentType, queryOption)
 
-    def loop(self, blocking=True):
-        # deactivated for now
-        # self.sock.setblocking(blocking)
+    def handleIncomingRequest(self, requestPacket, sourceIp, sourcePort):
+#             String url = "";
+#             // call endpoint url function
+#             for (int i = 0; i < packet.optionnum; i++) {
+#                 if (packet.options[i].number == COAP_URI_PATH && packet.options[i].length > 0) {
+#                     char urlname[packet.options[i].length + 1];
+#                     memcpy(urlname, packet.options[i].buffer, packet.options[i].length);
+#                     urlname[packet.options[i].length] = '\0';
+#                     if(url.length() > 0)
+#                       url += "/";
+#                     url += urlname;
+#                 }
+#             }
+#
+#             if (!uri.find(url)) {
+#                 sendResponse(_udp->remoteIP(), _udp->remotePort(), packet.messageid, NULL, 0,
+#                         COAP_NOT_FOUNT, COAP_NONE, NULL, 0);
+#             } else {
+#                 uri.find(url)(packet, _udp->remoteIP(), _udp->remotePort());
+#             }
+#         }
+#
+#         /* this type check did not use.
+#         if (packet.type == COAP_CON) {
+#             // send response
+#              sendResponse(_udp->remoteIP(), _udp->remotePort(), packet.messageid);
+#         }
+#          */
+        return False
+
+    def readBytesFromSocket(self, numOfBytes):
+        try:
+            return self.sock.recvfrom(numOfBytes)
+        except Exception as e:
+            return (None, None)
+
+    def loop(self):
         hasReceivedPacket = False
         if self.sock is None:
-            return hasReceivedPacket
+            return False
 
-        (buffer, remoteAddress) = self.sock.recvfrom(_BUF_MAX_SIZE)
+        (buffer, remoteAddress) = self.readBytesFromSocket(_BUF_MAX_SIZE)
+        self.sock.setblocking(True)
 
         while (buffer is not None) and (len(buffer) > 0):
             bufferLen = len(buffer)
             if (bufferLen < _COAP_HEADER_SIZE) or (((buffer[0] & 0xC0) >> 6) != 1):
-                (tempBuffer, tempRemoteAddress) = self.sock.recvfrom(_BUF_MAX_SIZE - bufferLen)
-                buffer.extend(tempBuffer)
+                (tempBuffer, tempRemoteAddress) = self.readBytesFromSocket(_BUF_MAX_SIZE - bufferLen)
+                if tempBuffer is not None:
+                    buffer.extend(tempBuffer)
                 continue
 
             packet = CoapPacket()
@@ -399,8 +436,9 @@ class Coap:
             elif (packet.tokenLength <= 8):
                 packet.token = buffer[4:packet.tokenLength]
             else:
-                (tempBuffer, tempRemoteAddress) = self.sock.recvfrom(_BUF_MAX_SIZE - bufferLen)
-                buffer.extend(tempBuffer)
+                (tempBuffer, tempRemoteAddress) = self.readBytesFromSocket(_BUF_MAX_SIZE - bufferLen)
+                if tempBuffer is not None:
+                    buffer.extend(tempBuffer)
                 continue
 
             if(_COAP_HEADER_SIZE + packet.tokenLength < bufferLen):
@@ -424,16 +462,18 @@ class Coap:
             if packet.type == COAP_TYPE.COAP_ACK:
                 if self.resposeCallback is not None:
                     self.resposeCallback(packet, remoteAddress)
+            else:
+                self.handleIncomingRequest(packet, remoteAddress)
 
             # deactivated for now - read only one packet per call
             # next packet
             # (buffer, remoteAddress) = self.sock.recvfrom(_BUF_MAX_SIZE)
             return hasReceivedPacket
-
         return hasReceivedPacket
 
-    # deactivated for now
-    # def poll(self, timeoutMs=-1):
-    #     start_time = time.ticks_ms()
-    #     while not self.loop(False) and ((time.ticks_ms()-start_time < timeoutMs)):
-    #         time.sleep_ms(10)
+    def poll(self, timeoutMs=-1):
+        self.sock.setblocking(False)
+        start_time = time.ticks_ms()
+        while not self.loop() and (time.ticks_diff(time.ticks_ms(), start_time)):
+            self.sock.setblocking(False)
+            time.sleep_ms(10)
