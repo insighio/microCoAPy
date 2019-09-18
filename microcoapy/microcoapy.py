@@ -159,6 +159,9 @@ class Coap:
             self.sock.close()
             self.sock = None
 
+    def addIncomingRequestCallback(self, requestUrl, callback):
+        self.callbacks[requestUrl] = callback
+
     def writePacketHeaderInfo(self, buffer, packet):
         # make coap packet base header
         buffer.append(0x01 << 6)
@@ -260,7 +263,6 @@ class Coap:
         return self.sendEx(ip, port, url, packet)
 
     def sendEx(self, ip, port, url, packet):
-        packet.optionnum = 0
         # messageId field: 16bit -> 0-65535
         # urandom to generate 2 bytes
         randBytes = uos.urandom(2)
@@ -278,7 +280,6 @@ class Coap:
         packet.code = code
         packet.token = token
         packet.payload = payload
-        packet.optionnum = 0
         packet.messageid = messageid
         packet.contentType = contentType
 
@@ -336,7 +337,7 @@ class Coap:
             return errorMessage
 
         option.number = delta + runningDelta
-        option.buffer = buffer[i+1:length]
+        option.buffer = buffer[i+1:i+1+length]
         packet.options.append(option)
 
         return (True, runningDelta + delta, endOfOptionIndex)
@@ -355,19 +356,22 @@ class Coap:
     def handleIncomingRequest(self, requestPacket, sourceIp, sourcePort):
         url = ""
         for opt in requestPacket.options:
-            if url != "":
-                url += "/"
-            url += opt.buffer
+            if (opt.number == COAP_OPTION_NUMBER.COAP_URI_PATH) and (len(opt.buffer) > 0):
+                if url != "":
+                    url += "/"
+                url += opt.buffer.decode('unicode_escape')
 
-        if url == "":
-            return
-        urlCallback = self.callbacks[url]
+        urlCallback = None
+        if url != "":
+            urlCallback = self.callbacks.get(url)
 
         if urlCallback is None:
+            print('Callback for url [', url, "] not found")
             self.sendResponse(sourceIp, sourcePort, requestPacket.messageid,
                               None, COAP_RESPONSE_CODE.COAP_NOT_FOUND,
                               COAP_CONTENT_TYPE.COAP_NONE, None)
         else:
+            print("redirecting packet to handlers...")
             urlCallback(requestPacket, sourceIp, sourcePort)
 
     def readBytesFromSocket(self, numOfBytes):
@@ -387,7 +391,7 @@ class Coap:
         if (packet.tokenLength == 0):
             packet.token = None
         elif (packet.tokenLength <= 8):
-            packet.token = buffer[4:packet.tokenLength]
+            packet.token = buffer[4:4+packet.tokenLength]
         else:
             (tempBuffer, tempRemoteAddress) = self.readBytesFromSocket(_BUF_MAX_SIZE - bufferLen)
             if tempBuffer is not None:
@@ -406,7 +410,6 @@ class Coap:
                 (status, delta, bufferIndex) = self.parseOption(packet, delta, buffer, bufferIndex)
                 if status is False:
                     return False
-            packet.optionnum = len(packet.options)
 
             if ((bufferIndex + 1) < bufferLen) and (buffer[bufferIndex] == 0xFF):
                 packet.payload = buffer[bufferIndex+1:]  # does this works?
@@ -450,7 +453,7 @@ class Coap:
 
         return False
 
-    def poll(self, timeoutMs=-1):
+    def poll(self, timeoutMs=-1, pollPeriodMs=500):
         start_time = time.ticks_ms()
-        while not self.loop(False) and (time.ticks_diff(time.ticks_ms(), start_time)):
-            time.sleep_ms(10)
+        while not self.loop(False) and (time.ticks_diff(time.ticks_ms(), start_time) < timeoutMs):
+            time.sleep_ms(pollPeriodMs)
