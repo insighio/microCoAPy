@@ -145,20 +145,6 @@ class CoapPacket:
         return tmpStr
 
 
-# probably unessasary
-class CoapUri:
-    def __init__(self):
-        self.callbacks = {}
-
-    def addCallBack(self, callback, url):
-        # if it already exists, update the callback of the URL
-        # if it does not exists, add new tuple
-        self.callbacks[url] = callback
-
-    def find(self, url):
-        return self.callbacks[url]
-
-
 class Coap:
     def __init__(self):
         self.sock = None
@@ -175,47 +161,33 @@ class Coap:
             self.sock.close()
             self.sock = None
 
-    def sendPacket(self, ip, port, coapPacket):
-        # the packet must be less than the MTU
-        runningDelta = 0
-        packetSize = 0
-
-        if coapPacket.contentType != COAP_CONTENT_TYPE.COAP_NONE:
-            optionBuffer = bytearray(2)
-            optionBuffer[0] = (coapPacket.contentType & 0xFF00) >> 8
-            optionBuffer[1] = (coapPacket.contentType & 0x00FF)
-            coapPacket.addOption(COAP_OPTION_NUMBER.COAP_CONTENT_FORMAT, optionBuffer)
-
-        if (coapPacket.query is not None) and (len(coapPacket.query) > 0):
-            coapPacket.addOption(COAP_OPTION_NUMBER.COAP_URI_QUERY, coapPacket.query)
-
+    def writePacketHeaderInfo(self, buffer, packet):
         # make coap packet base header
-        buffer = bytearray()
         buffer.append(0x01 << 6)
-        buffer[0] |= (coapPacket.type & 0x03) << 4
+        buffer[0] |= (packet.type & 0x03) << 4
         # max: 8 bytes of tokens, if token length is greater, it is ignored
         tokenLength = 0
-        if (coapPacket.token is not None) and (len(coapPacket.token) <= 0x0F):
-            tokenLength = len(coapPacket.token)
+        if (packet.token is not None) and (len(packet.token) <= 0x0F):
+            tokenLength = len(packet.token)
 
         buffer[0] |= (tokenLength & 0x0F)
-        buffer.append(coapPacket.code)
-        buffer.append(coapPacket.messageid >> 8)
-        buffer.append(coapPacket.messageid & 0xFF)
-        packetSize += _COAP_HEADER_SIZE
+        buffer.append(packet.code)
+        buffer.append(packet.messageid >> 8)
+        buffer.append(packet.messageid & 0xFF)
 
         if tokenLength > 0:
-            buffer.extend(coapPacket.token)
-            packetSize += tokenLength
+            buffer.extend(packet.token)
 
+    def writePacketOptions(self, buffer, packet):
+        runningDelta = 0
         # make option header
-        for opt in coapPacket.options:
+        for opt in packet.options:
             if (opt is None) or (opt.buffer is None) or (len(opt.buffer) == 0):
                 continue
 
             optBufferLen = len(opt.buffer)
 
-            if (packetSize + 5 + optBufferLen) >= _BUF_MAX_SIZE:
+            if (len(buffer) + 5 + optBufferLen) >= _BUF_MAX_SIZE:
                 return 0
 
             optdelta = opt.number - runningDelta
@@ -225,33 +197,44 @@ class Coap:
             buffer.append(0xFF & (delta << 4 | length))
             if (delta == 13):
                 buffer.append(optdelta - 13)
-                packetSize += 1
             elif (delta == 14):
                 buffer.append((optdelta - 269) >> 8)
                 buffer.append(0xFF & (optdelta - 269))
-                packetSize += 2
 
             if (length == 13):
                 buffer.append(optBufferLen - 13)
-                packetSize += 1
             elif (length == 14):
                 buffer.append(optBufferLen >> 8)
                 buffer.append(0xFF & (optBufferLen - 269))
-                packetSize += 2
 
             buffer.extend(opt.buffer)
-            packetSize += optBufferLen + 1  # why +1?
             runningDelta = opt.number
 
+    def writePacketPayload(self, buffer, packet):
         # make payload
-        if (coapPacket.payload is not None) and (len(coapPacket.payload)):
-            if (packetSize + 1 + len(coapPacket.payload)) >= _BUF_MAX_SIZE:
+        if (packet.payload is not None) and (len(packet.payload)):
+            if (len(buffer) + 1 + len(packet.payload)) >= _BUF_MAX_SIZE:
                 return 0
             buffer.append(0xFF)
-            buffer.extend(coapPacket.payload)
-            packetSize += 1 + len(coapPacket.payload)
+            buffer.extend(packet.payload)
 
-        print('Senging Packet: ', hex(len(buffer)), "> ", hexlify(buffer, ":"))
+    def sendPacket(self, ip, port, coapPacket):
+        if coapPacket.contentType != COAP_CONTENT_TYPE.COAP_NONE:
+            optionBuffer = bytearray(2)
+            optionBuffer[0] = (coapPacket.contentType & 0xFF00) >> 8
+            optionBuffer[1] = (coapPacket.contentType & 0x00FF)
+            coapPacket.addOption(COAP_OPTION_NUMBER.COAP_CONTENT_FORMAT, optionBuffer)
+
+        if (coapPacket.query is not None) and (len(coapPacket.query) > 0):
+            coapPacket.addOption(COAP_OPTION_NUMBER.COAP_URI_QUERY, coapPacket.query)
+
+        buffer = bytearray()
+        self.writePacketHeaderInfo(buffer, coapPacket)
+
+        self.writePacketOptions(buffer, coapPacket)
+
+        self.writePacketPayload(buffer, coapPacket)
+
         status = 0
         try:
             sockaddr = socket.getaddrinfo(ip, port)[0][-1]
@@ -320,6 +303,9 @@ class Coap:
         delta = (buffer[i] & 0xF0) >> 4
         length = buffer[i] & 0x0F
 
+        if delta == 15 or length == 15:
+            return errorMessage
+
         if delta == 13:
             headlen += 1
             if (buflen < headlen):
@@ -332,8 +318,6 @@ class Coap:
                 return errorMessage
             delta = ((buffer[i+1] << 8) | buffer[i+2]) + 269
             i += 2
-        elif delta == 15:
-            return errorMessage
 
         if length == 13:
             headlen += 1
@@ -347,8 +331,6 @@ class Coap:
                 return errorMessage
             length = ((buffer[i+1] << 8) | buffer[i+2]) + 269
             i += 2
-        elif length == 15:
-            return errorMessage
 
         endOfOptionIndex = (i + 1 + length)
 
@@ -373,34 +355,19 @@ class Coap:
         return self.send(ip, port, url, COAP_TYPE.COAP_CON, COAP_METHOD.COAP_POST, None, payload, contentType, queryOption)
 
     def handleIncomingRequest(self, requestPacket, sourceIp, sourcePort):
-#             String url = "";
-#             // call endpoint url function
-#             for (int i = 0; i < packet.optionnum; i++) {
-#                 if (packet.options[i].number == COAP_URI_PATH && packet.options[i].length > 0) {
-#                     char urlname[packet.options[i].length + 1];
-#                     memcpy(urlname, packet.options[i].buffer, packet.options[i].length);
-#                     urlname[packet.options[i].length] = '\0';
-#                     if(url.length() > 0)
-#                       url += "/";
-#                     url += urlname;
-#                 }
-#             }
-#
-#             if (!uri.find(url)) {
-#                 sendResponse(_udp->remoteIP(), _udp->remotePort(), packet.messageid, NULL, 0,
-#                         COAP_NOT_FOUNT, COAP_NONE, NULL, 0);
-#             } else {
-#                 uri.find(url)(packet, _udp->remoteIP(), _udp->remotePort());
-#             }
-#         }
-#
-#         /* this type check did not use.
-#         if (packet.type == COAP_CON) {
-#             // send response
-#              sendResponse(_udp->remoteIP(), _udp->remotePort(), packet.messageid);
-#         }
-#          */
-        return False
+        url = ""
+        for opt in requestPacket.options:
+            if url != "":
+                url += "/"
+            url += opt.buffer
+        urlCallback = self.callbacks[url]
+
+        if urlCallback is None:
+            self.sendResponse(sourceIp, sourcePort, requestPacket.messageid,
+                              None, COAP_RESPONSE_CODE.COAP_NOT_FOUNT,
+                              COAP_CONTENT_TYPE.COAP_NONE, None)
+        else:
+            urlCallback(requestPacket, sourceIp, sourcePort)
 
     def readBytesFromSocket(self, numOfBytes):
         try:
@@ -427,7 +394,7 @@ class Coap:
             return False
         return True
 
-    def parsePacketOptions(self, buffer, packet):
+    def parsePacketOptionsAndPayload(self, buffer, packet):
         bufferLen = len(buffer)
         if (_COAP_HEADER_SIZE + packet.tokenLength) < bufferLen:
             delta = 0
@@ -446,9 +413,7 @@ class Coap:
                 packet.payload = None
         return True
 
-
     def loop(self, blocking=True):
-        hasReceivedPacket = False
         if self.sock is None:
             return False
 
@@ -471,19 +436,16 @@ class Coap:
             if not self.parsePacketToken(buffer, packet):
                 continue
 
-            if not self.parsePacketOptions(buffer, packet):
+            if not self.parsePacketOptionsAndPayload(buffer, packet):
                 return False
 
             if packet.type == COAP_TYPE.COAP_ACK:
                 if self.resposeCallback is not None:
                     self.resposeCallback(packet, remoteAddress)
             else:
-                self.handleIncomingRequest(packet, remoteAddress)
+                self.handleIncomingRequest(packet, remoteAddress[0], remoteAddress[1])
+            return True
 
-            # deactivated for now - read only one packet per call
-            # next packet
-            # (buffer, remoteAddress) = self.sock.recvfrom(_BUF_MAX_SIZE)
-            return True  
         return False
 
     def poll(self, timeoutMs=-1):
