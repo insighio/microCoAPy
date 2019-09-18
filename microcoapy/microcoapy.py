@@ -1,8 +1,6 @@
 import usocket as socket
 import uos
-from ubinascii import hexlify
 import utime as time
-import errno
 
 # Macros
 _COAP_HEADER_SIZE = 4
@@ -56,7 +54,7 @@ COAP_RESPONSE_CODE = enum(
     COAP_UNAUTHORIZED=CoapResponseCode(4, 1),
     COAP_BAD_OPTION=CoapResponseCode(4, 2),
     COAP_FORBIDDEN=CoapResponseCode(4, 3),
-    COAP_NOT_FOUNT=CoapResponseCode(4, 4),
+    COAP_NOT_FOUND=CoapResponseCode(4, 4),
     COAP_METHOD_NOT_ALLOWD=CoapResponseCode(4, 5),
     COAP_NOT_ACCEPTABLE=CoapResponseCode(4, 6),
     COAP_PRECONDITION_FAILED=CoapResponseCode(4, 12),
@@ -360,11 +358,14 @@ class Coap:
             if url != "":
                 url += "/"
             url += opt.buffer
+
+        if url == "":
+            return
         urlCallback = self.callbacks[url]
 
         if urlCallback is None:
             self.sendResponse(sourceIp, sourcePort, requestPacket.messageid,
-                              None, COAP_RESPONSE_CODE.COAP_NOT_FOUNT,
+                              None, COAP_RESPONSE_CODE.COAP_NOT_FOUND,
                               COAP_CONTENT_TYPE.COAP_NONE, None)
         else:
             urlCallback(requestPacket, sourceIp, sourcePort)
@@ -439,7 +440,8 @@ class Coap:
             if not self.parsePacketOptionsAndPayload(buffer, packet):
                 return False
 
-            if packet.type == COAP_TYPE.COAP_ACK:
+            if packet.type == COAP_TYPE.COAP_ACK or\
+               packet.code == COAP_RESPONSE_CODE.COAP_NOT_FOUND:
                 if self.resposeCallback is not None:
                     self.resposeCallback(packet, remoteAddress)
             else:
