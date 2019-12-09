@@ -1,0 +1,85 @@
+import network
+import machine
+import microcoapy.microcoapy as microcoapy
+import usocket as socket
+
+wlan = network.WLAN(network.STA_IF)
+wlan.active(True)
+
+_MY_SSID = 'myssid'
+_MY_PASS = 'mypass'
+_SERVER_IP = '192.168.1.2'
+_SERVER_PORT = 5683  # default CoAP port
+_COAP_URL = 'to/a/path'
+
+
+def connectToWiFi():
+    nets = wlan.scan()
+    for net in nets:
+        ssid = net[0].decode("utf-8")
+        if ssid == _MY_SSID:
+            print('Network found!')
+            wlan.connect(ssid, _MY_PASS)
+            while not wlan.isconnected():
+                machine.idle()  # save power while waiting
+            print('WLAN connection succeeded!')
+            break
+
+    return wlan.isconnected()
+
+
+def sendPostRequest(client):
+    # About to post message...
+    bytesTransferred = client.post(_SERVER_IP, _SERVER_PORT, _COAP_URL, "test",
+                                   None, microcoapy.COAP_CONTENT_TYPE.COAP_TEXT_PLAIN)
+    print("Sent bytes: ", bytesTransferred)
+
+    # wait for respose to our request for 2 seconds
+    client.poll(2000)
+
+
+def sendPutRequest(client):
+    # About to post message...
+    bytesTransferred = client.put(_SERVER_IP, _SERVER_PORT, "led/turnOn", "test",
+                                   "authorization=8c6ebe8a-82d4-421d-89d3-28a7c48c7ec0",
+                                   microcoapy.COAP_CONTENT_TYPE.COAP_TEXT_PLAIN)
+    print("[PUT] Sent bytes: ", bytesTransferred)
+
+    # wait for respose to our request for 2 seconds
+    client.poll(2000)
+
+
+def sendGetRequest(client):
+    # About to post message...
+    bytesTransferred = client.get(_SERVER_IP, _SERVER_PORT, "current/measure")
+    print("[GET] Sent bytes: ", bytesTransferred)
+
+    # wait for respose to our request for 2 seconds
+    client.poll(2000)
+
+
+def receivedMessageCallback(packet, sender):
+        print('Message received:', packet, ', from: ', sender)
+        if(hasattr(packet, 'p')):
+            print('Mesage payload: ', packet.p)
+
+
+connectToWiFi()
+
+client = microcoapy.Coap()
+# setup callback for incoming respose to a request
+client.resposeCallback = receivedMessageCallback
+
+# Initialize custom socket
+customSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+customSocket.bind(('', 5683))
+
+# Use custom socket to all operations of CoAP
+client.setCustomSocket(customSocket)
+
+sendPostRequest(client)
+sendPutRequest(client)
+sendGetRequest(client)
+
+# close socket
+customSocket.close()
