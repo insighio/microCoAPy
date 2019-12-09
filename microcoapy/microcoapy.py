@@ -168,6 +168,10 @@ class Coap:
     #
     # Note: This overrides the automatic socket that has been created
     # by the 'start' function.
+    # The custom socket must support functions:
+    # * socket.sendto(bytes, address)
+    # * socket.recvfrom(bufsize)
+    # * socket.setblocking(flag) 
     def setCustomSocket(self, custom_socket):
         self.stop()
         self.sock = custom_socket
