@@ -171,7 +171,7 @@ class Coap:
     # The custom socket must support functions:
     # * socket.sendto(bytes, address)
     # * socket.recvfrom(bufsize)
-    # * socket.setblocking(flag) 
+    # * socket.setblocking(flag)
     def setCustomSocket(self, custom_socket):
         self.stop()
         self.sock = custom_socket
@@ -453,8 +453,6 @@ class Coap:
 
             packet = CoapPacket()
 
-            print("About to process: ", buffer)
-
             self.parsePacketHeaderInfo(buffer, packet)
 
             if not self.parsePacketToken(buffer, packet):
@@ -462,8 +460,6 @@ class Coap:
 
             if not self.parsePacketOptionsAndPayload(buffer, packet):
                 return False
-
-            print("Received: ", packet)
 
             if packet.type == COAP_TYPE.COAP_ACK or\
                packet.code == COAP_RESPONSE_CODE.COAP_NOT_FOUND:
