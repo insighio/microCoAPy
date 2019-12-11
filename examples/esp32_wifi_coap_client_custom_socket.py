@@ -64,6 +64,24 @@ def receivedMessageCallback(packet, sender):
             print('Mesage payload: ', packet.p)
 
 
+################################################################################
+## Custom socket implementation
+class CustomSocket:
+    def __init__(self):
+        print("CustomSocket: init")
+
+    def sendto(self, bytes, address):
+        print("CustomSocket: Sending bytes to: " + str(address))
+        return len(bytes)
+
+    def recvfrom(self, bufsize):
+        print("CustomSocket: receiving max bytes: " + bufsize)
+        return b"test data"
+
+    def setblocking(self, flag):
+        print(".", end="")
+################################################################################
+
 connectToWiFi()
 
 client = microcoapy.Coap()
@@ -71,8 +89,7 @@ client = microcoapy.Coap()
 client.resposeCallback = receivedMessageCallback
 
 # Initialize custom socket
-customSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-customSocket.bind(('', 5683))
+customSocket = CustomSocket()
 
 # Use custom socket to all operations of CoAP
 client.setCustomSocket(customSocket)
@@ -80,6 +97,3 @@ client.setCustomSocket(customSocket)
 sendPostRequest(client)
 sendPutRequest(client)
 sendGetRequest(client)
-
-# close socket
-customSocket.close()
