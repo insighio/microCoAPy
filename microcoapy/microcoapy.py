@@ -473,5 +473,5 @@ class Coap:
 
     def poll(self, timeoutMs=-1):
         start_time = time.ticks_ms()
-        while not self.loop(False) and (time.ticks_diff(time.ticks_ms(), start_time)):
+        while not self.loop(False) and (time.ticks_diff(time.ticks_ms(), start_time)) < timeoutMs:
             time.sleep_ms(10)
