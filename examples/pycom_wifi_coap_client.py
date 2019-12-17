@@ -1,6 +1,6 @@
 from network import WLAN
 import machine
-import microcoapy.microcoapy as microcoapy
+import microcoapy
 
 wlan = WLAN(mode=WLAN.STA)
 
@@ -29,7 +29,7 @@ def sendPostRequest(client):
     # About to post message...
     bytesTransferred = client.post(_SERVER_IP, _SERVER_PORT, _COAP_URL, "test",
                                    None, microcoapy.COAP_CONTENT_TYPE.COAP_TEXT_PLAIN)
-    print("Sent bytes: ", bytesTransferred)
+    print("[POST] Sent bytes: ", bytesTransferred)
 
     # wait for respose to our request for 2 seconds
     client.poll(2000)

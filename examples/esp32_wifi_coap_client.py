@@ -1,6 +1,6 @@
 import network
 import machine
-import microcoapy.microcoapy as microcoapy
+import microcoapy
 
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
@@ -40,7 +40,7 @@ def sendPostRequest(client):
 def sendPutRequest(client):
     # About to post message...
     bytesTransferred = client.put(_SERVER_IP, _SERVER_PORT, "led/turnOn", "test",
-                                   "authorization=8c6ebe8a-82d4-421d-89d3-28a7c48c7ec0",
+                                   "authorization=1234567",
                                    microcoapy.COAP_CONTENT_TYPE.COAP_TEXT_PLAIN)
     print("[PUT] Sent bytes: ", bytesTransferred)
 
