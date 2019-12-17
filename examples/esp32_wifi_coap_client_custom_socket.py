@@ -1,6 +1,6 @@
 import network
 import machine
-import microcoapy.microcoapy as microcoapy
+import microcoapy
 import usocket as socket
 
 wlan = network.WLAN(network.STA_IF)
