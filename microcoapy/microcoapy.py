@@ -150,14 +150,31 @@ class Coap:
         self.resposeCallback = None
         self.port = 0
 
+    # Create and initialize a new UDP socket to listen to.
+    # port: the local port to be used.
     def start(self, port=_COAP_DEFAULT_PORT):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind(('', port))
 
+    # Stop and destroy the socket that has been created by
+    # a previous call of 'start' function
     def stop(self):
         if self.sock is not None:
             self.sock.close()
             self.sock = None
+
+    # Set a custom instance of a UDP socket
+    # Is used instead of calling start/stop functions.
+    #
+    # Note: This overrides the automatic socket that has been created
+    # by the 'start' function.
+    # The custom socket must support functions:
+    # * socket.sendto(bytes, address)
+    # * socket.recvfrom(bufsize)
+    # * socket.setblocking(flag)
+    def setCustomSocket(self, custom_socket):
+        self.stop()
+        self.sock = custom_socket
 
     def addIncomingRequestCallback(self, requestUrl, callback):
         self.callbacks[requestUrl] = callback
@@ -336,6 +353,8 @@ class Coap:
         if endOfOptionIndex > len(buffer):
             return errorMessage
 
+        #print("Option number:", delta + runningDelta, ", buflen: from: ", i+1, " -> ", length)
+
         option.number = delta + runningDelta
         option.buffer = buffer[i+1:i+1+length]
         packet.options.append(option)
@@ -371,7 +390,6 @@ class Coap:
                               None, COAP_RESPONSE_CODE.COAP_NOT_FOUND,
                               COAP_CONTENT_TYPE.COAP_NONE, None)
         else:
-            print("redirecting packet to handlers...")
             urlCallback(requestPacket, sourceIp, sourcePort)
 
     def readBytesFromSocket(self, numOfBytes):
