@@ -13,7 +13,7 @@ _SERVER_PORT = 5683  # default CoAP port
 
 
 def connectToWiFi():
-    print('Starting attempt to connecto to WiFi...')
+    print('Starting attempt to connect to to WiFi...')
     nets = wlan.scan()
     for net in nets:
         ssid = net[0].decode("utf-8")
