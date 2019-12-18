@@ -1,11 +1,29 @@
 # microCoAPy
 A mini implementation of CoAP (Constrained Application Protocol) into MicroPython
 
-It is a port of an Arduino C++ library [CoAP-simple-library](https://github.com/hirotakaster/CoAP-simple-library) into MicroPython.
-
-Its main difference compared to the established Python implementations [aiocoap](https://github.com/chrysn/aiocoap) and [CoAPthon](https://github.com/Tanganelli/CoAPthon) is its size and complexity since this library will be used on microcontrollers that support MicroPython such as: Pycom devices, ESP32, ESP8266.
+The main difference compared to the established Python implementations [aiocoap](https://github.com/chrysn/aiocoap) and [CoAPthon](https://github.com/Tanganelli/CoAPthon) is its size and complexity since this library will be used on microcontrollers that support MicroPython such as: Pycom devices, ESP32, ESP8266.
 
 The first goal of this implementation is to provide basic functionality to send and receive data. DTLS and/or any special features of CoAP as defined in the RFC's, will be examined and implemented in the future.
+
+# Table of contents
+- [microCoAPy](#microcoapy)
+- [Table of contents](#table-of-contents)
+- [Tested boards](#tested-boards)
+- [Supported operations](#supported-operations)
+  - [CoAP client](#coap-client)
+    - [Example of usage](#example-of-usage)
+      - [Code explained](#code-explained)
+  - [CoAP server](#coap-server)
+    - [Example of usage](#example-of-usage-1)
+      - [Code explained](#code-explained-1)
+  - [Custom sockets](#custom-sockets)
+- [Future work](#future-work)
+- [Issues and contributions](#issues-and-contributions)
+
+# Tested boards
+* Pycom: all Pycom boards
+* ESP32
+* ESP8266
 
 # Supported operations
 
@@ -51,7 +69,9 @@ def receivedMessageCallback(packet, sender):
 client = microcoapy.Coap()
 client.resposeCallback = receivedMessageCallback
 ```
-During this step, the CoAP object get initialized. A callback handler is also created to get notifications from the server regarding our requests. __It is not used for incoming requests.__
+During this step, the CoAP object get initialized. A callback handler is also created to get notifications from the server regarding our requests. __It is not used for incoming requests.__ 
+
+When instantiating new Coap object, a custom port can be optionally configured: *client = microcoapy.Coap(5683)*.
 
 ```python
 client.start()
@@ -155,14 +175,61 @@ while time.ticks_diff(time.ticks_ms(), start_time) < timeoutMs:
 
 Finally, since the functions _loop_ and _poll_ __can handle a since packet per run__, we wrap its call to a while loop and wait for incoming messages.
 
+## Custom sockets
+By using default functions __microcoapy.Coap().start()__ and __microcoapy.Coap().stop()__ the Coap library handles the creation of a  UDP socket from **usocket module** at the default port 5683 (if no other is defined when Coap object gets instantiated). 
+
+If this socket type is not the appropriate for your project, custom socket instances can be used instead. 
+
+Lets consider the case of supporting an external GSM modem connected via Serial on the board and that there is no direct support of this modem from default modules like **network.LTE**. In this case there is no guarranty that a typical UDP socket from usocket module will be functional. Thus, a custom socket instance needs to be created. 
+
+The custom socket needs to implement the functions: 
+* sendto(self, bytes, address) : returns the number of bytes transmitted
+* recvfrom(self, bufsize): returns a byte array
+* setblocking(self, flag)
+
+Example:
+
+```python 
+## Custom socket implementation
+class CustomSocket:
+    def __init__(self):
+        print("CustomSocket: init")
+
+    def sendto(self, bytes, address):
+        print("CustomSocket: Sending bytes to: " + str(address))
+        return len(bytes)
+
+    def recvfrom(self, bufsize):
+        print("CustomSocket: receiving max bytes: " + bufsize)
+        return b"test data"
+
+    def setblocking(self, flag):
+        print(".", end="")
+```
+
+After creating the custom socket, it is utilized by the Coap instance after calling microcoapy.Coap.setCustomSocket(customSocket). 
+
+Example:
+
+```python
+client = microcoapy.Coap()
+# setup callback for incoming respose to a request
+client.resposeCallback = receivedMessageCallback
+
+# Initialize custom socket
+customSocket = CustomSocket()
+
+# Use custom socket to all operations of CoAP
+client.setCustomSocket(customSocket)
+```
+
 # Future work
 
 * Since this library is quite fresh, the next period will be full of testing.
 * write documentation on GitHub
 * write documentation as docstring in the code at the declaration of each function
-* create more examples with new scenarios and more platforms (ex. ESP32, ESP8266, etc.)
 * enhancments on funtionality as needed
 
-# Issues & contributions
+# Issues and contributions
 
 It would be our pleasure to receive comments, bug reports and/or contributions. To do this use the Issues and Pull requests of GitHub.
