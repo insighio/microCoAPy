@@ -1,7 +1,6 @@
 import network
 import machine
-import microcoapy.microcoapy as microcoapy
-import usocket as socket
+import microcoapy
 
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
@@ -64,36 +63,18 @@ def receivedMessageCallback(packet, sender):
             print('Mesage payload: ', packet.p)
 
 
-################################################################################
-## Custom socket implementation
-class CustomSocket:
-    def __init__(self):
-        print("CustomSocket: init")
-
-    def sendto(self, bytes, address):
-        print("CustomSocket: Sending bytes to: " + str(address))
-        return len(bytes)
-
-    def recvfrom(self, bufsize):
-        print("CustomSocket: receiving max bytes: " + bufsize)
-        return b"test data"
-
-    def setblocking(self, flag):
-        print(".", end="")
-################################################################################
-
 connectToWiFi()
 
 client = microcoapy.Coap()
 # setup callback for incoming respose to a request
 client.resposeCallback = receivedMessageCallback
 
-# Initialize custom socket
-customSocket = CustomSocket()
-
-# Use custom socket to all operations of CoAP
-client.setCustomSocket(customSocket)
+# Starting CoAP...
+client.start()
 
 sendPostRequest(client)
 sendPutRequest(client)
 sendGetRequest(client)
+
+# stop CoAP
+client.stop()

@@ -1,9 +1,11 @@
-from network import WLAN
+import network
 import machine
-import microcoapy.microcoapy as microcoapy
+import microcoapy
 import utime as time
 
-wlan = WLAN(mode=WLAN.STA)
+#wlan = WLAN(mode=WLAN.STA)
+wlan = network.WLAN(network.STA_IF)
+wlan.active(True)
 
 _MY_SSID = 'myssid'
 _MY_PASS = 'mypass'
@@ -11,12 +13,13 @@ _SERVER_PORT = 5683  # default CoAP port
 
 
 def connectToWiFi():
-    print('Starting attempt to connect to WiFi...')
+    print('Starting attempt to connect to to WiFi...')
     nets = wlan.scan()
     for net in nets:
-        if net.ssid == _MY_SSID:
+        ssid = net[0].decode("utf-8")
+        if ssid == _MY_SSID:
             print('Network found!')
-            wlan.connect(net.ssid, auth=(net.sec, _MY_PASS), timeout=5000)
+            wlan.connect(ssid, _MY_PASS)
             while not wlan.isconnected():
                 machine.idle()  # save power while waiting
 
