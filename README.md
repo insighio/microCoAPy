@@ -19,7 +19,7 @@ Here is an example using the CoAP client functionality to send requests and rece
 
 
 ```python
-import microcoapy.microcoapy as microcoapy
+import microcoapy
 # your code to connect to the network
 #...
 def receivedMessageCallback(packet, sender):
@@ -101,7 +101,7 @@ Starts a server and calls custom callbacks upon receiving an incoming request. T
 Here is an example using the CoAP server functionality to receive requests and respond back. (this example is part of [examples/pycom_wifi_coap_server.py](https://github.com/insighiot/microCoAPy/blob/master/examples/pycom_wifi_coap_server.py))
 
 ```python
-import microcoapy.microcoapy as microcoapy
+import microcoapy
 # your code to connect to the network
 #...
 client = microcoapy.Coap()
