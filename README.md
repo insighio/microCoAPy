@@ -6,9 +6,8 @@ The main difference compared to the established Python implementations [aiocoap]
 The first goal of this implementation is to provide basic functionality to send and receive data. DTLS and/or any special features of CoAP as defined in the RFC's, will be examined and implemented in the future.
 
 # Table of contents
-- [microCoAPy](#microcoapy)
-- [Table of contents](#table-of-contents)
 - [Tested boards](#tested-boards)
+- [Documentation](https://github.com/insighio/microCoAPy/wiki)
 - [Supported operations](#supported-operations)
   - [CoAP client](#coap-client)
     - [Example of usage](#example-of-usage)
@@ -77,20 +76,20 @@ When instantiating new Coap object, a custom port can be optionally configured: 
 client.start()
 ```
 
-The call to the _start_ function is where the UDP socket gets created. By default it gets bind to the default CoAP port 5683. If a custom port is required, pass it as argument to the _start_ function.
+The call to the [_start_](https://github.com/insighio/microCoAPy/wiki#startport) function is where the UDP socket gets created. By default it gets bind to the default CoAP port 5683. If a custom port is required, pass it as argument to the [_start_](https://github.com/insighio/microCoAPy/wiki#startport) function.
 
 ```python
 bytesTransferred = client.get(_SERVER_IP, _SERVER_PORT, "current/measure")
 print("[GET] Sent bytes: ", bytesTransferred)
 ```
 
-Having the socket ready, it is time to send our request. In this case we send a simple GET request to the specific address (ex. 192.168.1.2:5683). The _get_ function returns the number of bytes that have been sent. So in case of error, 0 will be returned.  
+Having the socket ready, it is time to send our request. In this case we send a simple GET request to the specific address (ex. 192.168.1.2:5683). The [_get_](https://github.com/insighio/microCoAPy/wiki#getip-port-url) function returns the number of bytes that have been sent. So in case of error, 0 will be returned.  
 
 ```python
 client.poll(2000)
 ```
 
-Since a GET request has been posted, most likely it would be nice to receive and process the server response. For this reason we call _poll_ function that will try to read incoming messages for 2000 milliseconds. Upon timeout the execution will continue to the next command.
+Since a GET request has been posted, most likely it would be nice to receive and process the server response. For this reason we call [_poll_](https://github.com/insighio/microCoAPy/wiki#polltimeoutms-pollperiodms) function that will try to read incoming messages for 2000 milliseconds. Upon timeout the execution will continue to the next command.
 
 If a packet gets received during that period of type that is an _ACK_ to our request or a report (ex. _404_), the callback that has been registered at the beginning will be called.
 
@@ -98,7 +97,7 @@ If a packet gets received during that period of type that is an _ACK_ to our req
 client.stop()
 ```
 
-Finally, stop is called to gracefully close the socket. It is preferable to have a corresponding call of _stop_ to each call of _start_ function because in special cases such as when using mobile modems, the modem might stuck when running out of available sockets.  
+Finally, stop is called to gracefully close the socket. It is preferable to have a corresponding call of [_stop_](https://github.com/insighio/microCoAPy/wiki#stop) to each call of [_start_](https://github.com/insighio/microCoAPy/wiki#startport) function because in special cases such as when using mobile modems, the modem might stuck when running out of available sockets.  
 
 To send POST or PUT message replace the call of _get_ function with:
 ```python
@@ -111,7 +110,7 @@ bytesTransferred = client.post(_SERVER_IP, _SERVER_PORT, "led/turnOn", "test",
                                  None, microcoapy.COAP_CONTENT_TYPE.COAP_TEXT_PLAIN)
 ```
 
-For details on the arguments please advice the __documentation__ (link to be soon provided).
+For details on the arguments please advice the [documentation](https://github.com/insighio/microCoAPy/wiki).
 
 ## CoAP server
 Starts a server and calls custom callbacks upon receiving an incoming request. The response needs to be defined by the user of the library.
@@ -146,7 +145,7 @@ client.stop()
 ```
 
 #### Code explained
-Lets examine the above code and explain its purpose. For details on _start_ and _stop_ functions advice the previous paragraph of the client example.
+Lets examine the above code and explain its purpose. For details on [_start_](https://github.com/insighio/microCoAPy/wiki#startport) and [_stop_](https://github.com/insighio/microCoAPy/wiki#stop) functions advice the previous paragraph of the client example.
 
 ```python
 def measureCurrent(packet, senderIp, senderPort):
@@ -160,7 +159,7 @@ client.addIncomingRequestCallback('current/measure', measureCurrent)
 
 This is the main step to prepare the CoAP instance to behave as a server: receive and handle requests. First we create a function _measureCurrent_ that takes as arguments the incoming packet, the sender IP and Port. This function will  be used as a callback and will be triggered every time a specific URI path is provided in the incoming request.
 
-This URL is defined upon registering the callback to the CoAP instance by calling _addIncomingRequestCallback_ function. After this call, if a CoAP GET/PUT/POST packet is received with URI path: coap://<IP>/current/measure , the callback will be triggered.
+This URL is defined upon registering the callback to the CoAP instance by calling [_addIncomingRequestCallback_](https://github.com/insighio/microCoAPy/wiki#addincomingrequestcallbackrequesturl-callback) function. After this call, if a CoAP GET/PUT/POST packet is received with URI path: coap://<IP>/current/measure , the callback will be triggered.
 
 By default, the server does not send any response. This is a responsibility of the user to send (if needed) the appropriate response.
 
@@ -173,7 +172,7 @@ while time.ticks_diff(time.ticks_ms(), start_time) < timeoutMs:
     client.poll(60000)
 ```
 
-Finally, since the functions _loop_ and _poll_ __can handle a since packet per run__, we wrap its call to a while loop and wait for incoming messages.
+Finally, since the functions [_loop_](https://github.com/insighio/microCoAPy/wiki#loopblocking) and [_poll_](https://github.com/insighio/microCoAPy/wiki#polltimeoutms-pollperiodms) __can handle a since packet per run__, we wrap its call to a while loop and wait for incoming messages.
 
 ## Custom sockets
 By using default functions __microcoapy.Coap().start()__ and __microcoapy.Coap().stop()__ the Coap library handles the creation of a  UDP socket from **usocket module** at the default port 5683 (if no other is defined when Coap object gets instantiated). 
@@ -207,7 +206,7 @@ class CustomSocket:
         print(".", end="")
 ```
 
-After creating the custom socket, it is utilized by the Coap instance after calling microcoapy.Coap.setCustomSocket(customSocket). 
+After creating the custom socket, it is utilized by the Coap instance after calling [microcoapy.Coap.setCustomSocket(customSocket)](https://github.com/insighio/microCoAPy/wiki#setcustomsocketcustom_socket). 
 
 Example:
 
@@ -226,8 +225,6 @@ client.setCustomSocket(customSocket)
 # Future work
 
 * Since this library is quite fresh, the next period will be full of testing.
-* write documentation on GitHub
-* write documentation as docstring in the code at the declaration of each function
 * enhancments on funtionality as needed
 
 # Issues and contributions
