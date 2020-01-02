@@ -5,6 +5,17 @@ The main difference compared to the established Python implementations [aiocoap]
 
 The first goal of this implementation is to provide basic functionality to send and receive data. DTLS and/or any special features of CoAP as defined in the RFC's, will be examined and implemented in the future.
 
+---
+# Breaking change 02-01-2020
+To comply the library parameter values with the namings of RFC 7252, some parameter names have changed. In case these parameters are used in your project, please update them accordingly.
+
+* @ CoapPacket
+    * rename [self.code] to [self.method]
+    * rename [self.contentType] to [self.content_format]
+* coap_macros
+    * rename [COAP_CONTENT_TYPE] to [COAP_CONTENT_FORMAT]
+---
+
 # Table of contents
 - [Tested boards](#tested-boards)
 - [Documentation](https://github.com/insighio/microCoAPy/wiki)
@@ -102,12 +113,12 @@ Finally, stop is called to gracefully close the socket. It is preferable to have
 To send POST or PUT message replace the call of _get_ function with:
 ```python
 bytesTransferred = client.put(_SERVER_IP, _SERVER_PORT, "led/turnOn", "test",
-                                 None, microcoapy.COAP_CONTENT_TYPE.COAP_TEXT_PLAIN)
+                                 None, microcoapy.COAP_CONTENT_FORMAT.COAP_TEXT_PLAIN)
 ```
 or
 ```python
 bytesTransferred = client.post(_SERVER_IP, _SERVER_PORT, "led/turnOn", "test",
-                                 None, microcoapy.COAP_CONTENT_TYPE.COAP_TEXT_PLAIN)
+                                 None, microcoapy.COAP_CONTENT_FORMAT.COAP_TEXT_PLAIN)
 ```
 
 For details on the arguments please advice the [documentation](https://github.com/insighio/microCoAPy/wiki).
@@ -129,7 +140,7 @@ def measureCurrent(packet, senderIp, senderPort):
     print('Measure-current request received:', packet, ', from: ', senderIp, ":", senderPort)
     client.sendResponse(senderIp, senderPort, packet.messageid,
                       None, microcoapy.COAP_RESPONSE_CODE.COAP_CONTENT,
-                      microcoapy.COAP_CONTENT_TYPE.COAP_NONE, "222")
+                      microcoapy.COAP_CONTENT_FORMAT.COAP_NONE, "222")
 
 client.addIncomingRequestCallback('current/measure', measureCurrent)
 
@@ -152,7 +163,7 @@ def measureCurrent(packet, senderIp, senderPort):
     print('Measure-current request received:', packet, ', from: ', senderIp, ":", senderPort)
     client.sendResponse(senderIp, senderPort, packet.messageid,
                       None, microcoapy.COAP_RESPONSE_CODE.COAP_CONTENT,
-                      microcoapy.COAP_CONTENT_TYPE.COAP_NONE, "222")
+                      microcoapy.COAP_CONTENT_FORMAT.COAP_NONE, "222")
 
 client.addIncomingRequestCallback('current/measure', measureCurrent)
 ```
