@@ -18,7 +18,7 @@ def writePacketHeaderInfo(buffer, packet):
         tokenLength = len(packet.token)
 
     buffer[0] |= (tokenLength & 0x0F)
-    buffer.append(packet.code)
+    buffer.append(packet.method)
     buffer.append(packet.messageid >> 8)
     buffer.append(packet.messageid & 0xFF)
 

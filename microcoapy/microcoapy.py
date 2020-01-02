@@ -47,10 +47,10 @@ class Coap:
         self.callbacks[requestUrl] = callback
 
     def sendPacket(self, ip, port, coapPacket):
-        if coapPacket.contentType != macros.COAP_CONTENT_TYPE.COAP_NONE:
+        if coapPacket.content_format != macros.COAP_CONTENT_FORMAT.COAP_NONE:
             optionBuffer = bytearray(2)
-            optionBuffer[0] = (coapPacket.contentType & 0xFF00) >> 8
-            optionBuffer[1] = (coapPacket.contentType & 0x00FF)
+            optionBuffer[0] = (coapPacket.content_format & 0xFF00) >> 8
+            optionBuffer[1] = (coapPacket.content_format & 0x00FF)
             coapPacket.addOption(macros.COAP_OPTION_NUMBER.COAP_CONTENT_FORMAT, optionBuffer)
 
         if (coapPacket.query is not None) and (len(coapPacket.query) > 0):
@@ -69,7 +69,7 @@ class Coap:
             status = self.sock.sendto(buffer, sockaddr)
             if status > 0:
                 status = coapPacket.messageid
-            print('Packet sent. MessageId: ', status)
+            print('Packet sent. Token: ', status)
         except Exception as e:
             status = 0
             print('Exception while sending packet...')
@@ -78,14 +78,14 @@ class Coap:
 
         return status
 
-    def send(self, ip, port, url, type, method, token, payload, content_type, queryOption):
+    def send(self, ip, port, url, type, method, token, payload, content_format, query_option):
         packet = CoapPacket()
         packet.type = type
-        packet.code = method
+        packet.method = method
         packet.token = token
         packet.payload = payload
-        packet.contentType = content_type
-        packet.query = queryOption
+        packet.content_format = content_format
+        packet.query = query_option
 
         return self.sendEx(ip, port, url, packet)
 
@@ -100,28 +100,26 @@ class Coap:
         return self.sendPacket(ip, port, packet)
 
     # to be tested
-    def sendResponse(self, ip, port, messageid, payload, code, contentType, token):
+    def sendResponse(self, ip, port, messageid, payload, method, content_format, token):
         packet = CoapPacket()
 
         packet.type = macros.COAP_TYPE.COAP_ACK
-        packet.code = code
+        packet.method = method
         packet.token = token
         packet.payload = payload
         packet.messageid = messageid
-        packet.contentType = contentType
+        packet.content_format = content_format
 
         return self.sendPacket(ip, port, packet)
 
-    # to be tested
-    def get(self, ip, port, url):
-        return self.send(ip, port, url, macros.COAP_TYPE.COAP_CON, macros.COAP_METHOD.COAP_GET, None, None, macros.COAP_CONTENT_TYPE.COAP_NONE, None)
+    def get(self, ip, port, url, token=bytearray()):
+        return self.send(ip, port, url, macros.COAP_TYPE.COAP_CON, macros.COAP_METHOD.COAP_GET, token, None, macros.COAP_CONTENT_FORMAT.COAP_NONE, None)
 
-    # to be tested
-    def put(self, ip, port, url, payload=bytearray(), queryOption=None, contentType=macros.COAP_CONTENT_TYPE.COAP_NONE):
-        return self.send(ip, port, url, macros.COAP_TYPE.COAP_CON, macros.COAP_METHOD.COAP_PUT, None, payload, contentType, queryOption)
+    def put(self, ip, port, url, payload=bytearray(), query_option=None, content_format=macros.COAP_CONTENT_FORMAT.COAP_NONE, token=bytearray()):
+        return self.send(ip, port, url, macros.COAP_TYPE.COAP_CON, macros.COAP_METHOD.COAP_PUT, token, payload, content_format, query_option)
 
-    def post(self, ip, port, url, payload=bytearray(), queryOption=None, contentType=macros.COAP_CONTENT_TYPE.COAP_NONE):
-        return self.send(ip, port, url, macros.COAP_TYPE.COAP_CON, macros.COAP_METHOD.COAP_POST, None, payload, contentType, queryOption)
+    def post(self, ip, port, url, payload=bytearray(), query_option=None, content_format=macros.COAP_CONTENT_FORMAT.COAP_NONE, token=bytearray()):
+        return self.send(ip, port, url, macros.COAP_TYPE.COAP_CON, macros.COAP_METHOD.COAP_POST, token, payload, content_format, query_option)
 
     def handleIncomingRequest(self, requestPacket, sourceIp, sourcePort):
         url = ""
@@ -139,7 +137,7 @@ class Coap:
             print('Callback for url [', url, "] not found")
             self.sendResponse(sourceIp, sourcePort, requestPacket.messageid,
                               None, macros.COAP_RESPONSE_CODE.COAP_NOT_FOUND,
-                              macros.COAP_CONTENT_TYPE.COAP_NONE, None)
+                              macros.COAP_CONTENT_FORMAT.COAP_NONE, None)
         else:
             urlCallback(requestPacket, sourceIp, sourcePort)
 
@@ -188,7 +186,7 @@ class Coap:
                 return False
 
             if packet.type == macros.COAP_TYPE.COAP_ACK or\
-               packet.code == macros.COAP_RESPONSE_CODE.COAP_NOT_FOUND:
+               packet.method == macros.COAP_RESPONSE_CODE.COAP_NOT_FOUND:
                 if self.resposeCallback is not None:
                     self.resposeCallback(packet, remoteAddress)
             else:

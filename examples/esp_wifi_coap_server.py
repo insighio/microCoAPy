@@ -3,12 +3,11 @@ import machine
 import microcoapy
 import utime as time
 
-#wlan = WLAN(mode=WLAN.STA)
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
 
-_MY_SSID = 'myssid'
-_MY_PASS = 'mypass'
+_MY_SSID = 'monroe2G'
+_MY_PASS = 'movement'
 _SERVER_PORT = 5683  # default CoAP port
 
 
@@ -37,14 +36,14 @@ def turnOnLed(packet, senderIp, senderPort):
     print('Turn-on-led request received:', packet, ', from: ', senderIp, ":", senderPort)
     client.sendResponse(senderIp, senderPort, packet.messageid,
                       None, microcoapy.COAP_RESPONSE_CODE.COAP_CONTENT,
-                      microcoapy.COAP_CONTENT_TYPE.COAP_NONE, "Ok")
+                      microcoapy.COAP_CONTENT_FORMAT.COAP_NONE, "Ok")
 
 
 def measureCurrent(packet, senderIp, senderPort):
     print('Measure-current request received:', packet, ', from: ', senderIp, ":", senderPort)
     client.sendResponse(senderIp, senderPort, packet.messageid,
                       None, microcoapy.COAP_RESPONSE_CODE.COAP_SERVICE_UNAVALIABLE,
-                      microcoapy.COAP_CONTENT_TYPE.COAP_NONE, None)
+                      microcoapy.COAP_CONTENT_FORMAT.COAP_NONE, None)
 
 
 # setup callback for incoming respose to a request
