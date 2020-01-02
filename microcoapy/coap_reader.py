@@ -61,7 +61,7 @@ def parseOption(packet, runningDelta, buffer, i):
 def parsePacketHeaderInfo(buffer, packet):
     packet.type = (buffer[0] & 0x30) >> 4
     packet.tokenLength = buffer[0] & 0x0F
-    packet.code = buffer[1]
+    packet.method = buffer[1]
     packet.messageid = 0xFF00 & (buffer[2] << 8)
     packet.messageid |= 0x00FF & buffer[3]
 

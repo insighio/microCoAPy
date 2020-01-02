@@ -4,11 +4,11 @@ from microcoapy.coap_option import CoapOption
 class CoapPacket:
     def __init__(self):
         self.type = macros.COAP_TYPE.COAP_CON  # uint8_t
-        self.code = macros.COAP_METHOD.COAP_GET  # uint8_t
+        self.method = macros.COAP_METHOD.COAP_GET  # uint8_t
         self.token = bytearray()
         self.payload = bytearray()
         self.messageid = 0
-        self.contentType = macros.COAP_CONTENT_TYPE.COAP_NONE
+        self.content_format = macros.COAP_CONTENT_FORMAT.COAP_NONE
         self.query = bytearray()  # uint8_t*
         self.options = []
 

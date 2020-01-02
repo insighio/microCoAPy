@@ -34,14 +34,14 @@ def turnOnLed(packet, senderIp, senderPort):
     print('Turn-on-led request received:', packet, ', from: ', senderIp, ":", senderPort)
     client.sendResponse(senderIp, senderPort, packet.messageid,
                       None, microcoapy.COAP_RESPONSE_CODE.COAP_CONTENT,
-                      microcoapy.COAP_CONTENT_TYPE.COAP_NONE, "Ok")
+                      microcoapy.COAP_CONTENT_FORMAT.COAP_NONE, "Ok")
 
 
 def measureCurrent(packet, senderIp, senderPort):
     print('Measure-current request received:', packet, ', from: ', senderIp, ":", senderPort)
     client.sendResponse(senderIp, senderPort, packet.messageid,
                       None, microcoapy.COAP_RESPONSE_CODE.COAP_SERVICE_UNAVALIABLE,
-                      microcoapy.COAP_CONTENT_TYPE.COAP_NONE, None)
+                      microcoapy.COAP_CONTENT_FORMAT.COAP_NONE, None)
 
 
 # setup callback for incoming respose to a request

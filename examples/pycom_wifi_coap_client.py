@@ -28,7 +28,7 @@ def connectToWiFi():
 def sendPostRequest(client):
     # About to post message...
     bytesTransferred = client.post(_SERVER_IP, _SERVER_PORT, _COAP_URL, "test",
-                                   None, microcoapy.COAP_CONTENT_TYPE.COAP_TEXT_PLAIN)
+                                   None, microcoapy.COAP_CONTENT_FORMAT.COAP_TEXT_PLAIN)
     print("[POST] Sent bytes: ", bytesTransferred)
 
     # wait for respose to our request for 2 seconds
@@ -38,7 +38,7 @@ def sendPostRequest(client):
 def sendPutRequest(client):
     # About to post message...
     bytesTransferred = client.put(_SERVER_IP, _SERVER_PORT, "led/turnOn", "test",
-                                   None, microcoapy.COAP_CONTENT_TYPE.COAP_TEXT_PLAIN)
+                                   None, microcoapy.COAP_CONTENT_FORMAT.COAP_TEXT_PLAIN)
     print("[PUT] Sent bytes: ", bytesTransferred)
 
     # wait for respose to our request for 2 seconds
