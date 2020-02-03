@@ -23,3 +23,6 @@ class CoapPacket:
     def setUriPath(self, url):
         for subPath in url.split('/'):
             self.addOption(macros.COAP_OPTION_NUMBER.COAP_URI_PATH, subPath)
+
+    def toString(self):
+        return "type: " + str(self.type) + ", method: " + str(self.method) + ", payload: " + str(self.payload)

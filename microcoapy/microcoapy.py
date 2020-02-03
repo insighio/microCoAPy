@@ -137,7 +137,7 @@ class Coap:
             print('Callback for url [', url, "] not found")
             self.sendResponse(sourceIp, sourcePort, requestPacket.messageid,
                               None, macros.COAP_RESPONSE_CODE.COAP_NOT_FOUND,
-                              macros.COAP_CONTENT_FORMAT.COAP_NONE, None)
+                              macros.COAP_CONTENT_FORMAT.COAP_NONE, requestPacket.token)
         else:
             urlCallback(requestPacket, sourceIp, sourcePort)
 
