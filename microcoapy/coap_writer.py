@@ -1,4 +1,5 @@
 from microcoapy.coap_macros import _BUF_MAX_SIZE
+from microcoapy.coap_macros import COAP_VERSION
 
 def CoapOptionDelta(v):
     if v < 13:
@@ -10,7 +11,7 @@ def CoapOptionDelta(v):
 
 def writePacketHeaderInfo(buffer, packet):
     # make coap packet base header
-    buffer.append(0x01 << 6)
+    buffer.append(COAP_VERSION.COAP_VERSION_1 << 6)
     buffer[0] |= (packet.type & 0x03) << 4
     # max: 8 bytes of tokens, if token length is greater, it is ignored
     tokenLength = 0

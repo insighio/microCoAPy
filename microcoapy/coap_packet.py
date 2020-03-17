@@ -3,6 +3,7 @@ from microcoapy.coap_option import CoapOption
 
 class CoapPacket:
     def __init__(self):
+        self.version = macros.COAP_VERSION.COAP_VERSION_UNSUPPORTED
         self.type = macros.COAP_TYPE.COAP_CON  # uint8_t
         self.method = macros.COAP_METHOD.COAP_GET  # uint8_t
         self.token = bytearray()
@@ -25,4 +26,5 @@ class CoapPacket:
             self.addOption(macros.COAP_OPTION_NUMBER.COAP_URI_PATH, subPath)
 
     def toString(self):
-        return "type: " + str(self.type) + ", method: " + str(self.method) + ", payload: " + str(self.payload)
+        class_, detail = macros.CoapResponseCode.decode(self.method)
+        return "type: {}, method: {}.{:02d}, messageid: {}, payload: {}".format(macros.coapTypeToString(self.type), class_, detail, self.messageid, self.payload)

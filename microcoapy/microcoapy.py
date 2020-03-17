@@ -10,12 +10,29 @@ from microcoapy.coap_writer import writePacketHeaderInfo
 from microcoapy.coap_writer import writePacketOptions
 from microcoapy.coap_writer import writePacketPayload
 
+import binascii
+
+MICROCOAPY_DEBUG = True
+
+def log(s):
+    if MICROCOAPY_DEBUG:
+        print(s)
+
 class Coap:
+    TRANSMISSION_STATE = macros.enum(
+        STATE_IDLE = 0,
+        STATE_SEPARATE_ACK_RECEIVED_WAITING_DATA = 1
+    )
+
     def __init__(self):
+        self.debug = False
         self.sock = None
         self.callbacks = {}
         self.resposeCallback = None
         self.port = 0
+        self.isServer = False
+        self.state = self.TRANSMISSION_STATE.STATE_IDLE
+
 
     # Create and initialize a new UDP socket to listen to.
     # port: the local port to be used.
@@ -45,6 +62,7 @@ class Coap:
 
     def addIncomingRequestCallback(self, requestUrl, callback):
         self.callbacks[requestUrl] = callback
+        self.isServer = true
 
     def sendPacket(self, ip, port, coapPacket):
         if coapPacket.content_format != macros.COAP_CONTENT_FORMAT.COAP_NONE:
@@ -69,7 +87,8 @@ class Coap:
             status = self.sock.sendto(buffer, sockaddr)
             if status > 0:
                 status = coapPacket.messageid
-            print('Packet sent. Token: ', status)
+
+            log('Packet sent. messageid: ' + str(status))
         except Exception as e:
             status = 0
             print('Exception while sending packet...')
@@ -90,6 +109,7 @@ class Coap:
         return self.sendEx(ip, port, url, packet)
 
     def sendEx(self, ip, port, url, packet):
+        self.state = self.TRANSMISSION_STATE.STATE_IDLE
         # messageId field: 16bit -> 0-65535
         # urandom to generate 2 bytes
         randBytes = uos.urandom(2)
@@ -177,6 +197,8 @@ class Coap:
 
             packet = CoapPacket()
 
+            log("Packet bytes: " + str(binascii.hexlify(bytearray(buffer))))
+
             parsePacketHeaderInfo(buffer, packet)
 
             if not self.parsePacketToken(buffer, packet):
@@ -185,12 +207,24 @@ class Coap:
             if not parsePacketOptionsAndPayload(buffer, packet):
                 return False
 
-            if packet.type == macros.COAP_TYPE.COAP_ACK or\
-               packet.method == macros.COAP_RESPONSE_CODE.COAP_NOT_FOUND:
-                if self.resposeCallback is not None:
-                    self.resposeCallback(packet, remoteAddress)
-            else:
+            if self.isServer:
                 self.handleIncomingRequest(packet, remoteAddress[0], remoteAddress[1])
+            else:
+                # To handle cases of Separate response (rfc7252 #5.2.2)
+                if packet.type == macros.COAP_TYPE.COAP_ACK and\
+                    packet.method == macros.COAP_METHOD.COAP_EMPTY_MESSAGE:
+                      self.state = self.TRANSMISSION_STATE.STATE_SEPARATE_ACK_RECEIVED_WAITING_DATA
+                      return False
+                # case of piggybacked response where the response is in the ACK (rfc7252 #5.2.1)
+                # or the data of a separate message
+                else:
+                    if self.state == self.TRANSMISSION_STATE.STATE_SEPARATE_ACK_RECEIVED_WAITING_DATA:
+                        self.state = self.TRANSMISSION_STATE.STATE_IDLE
+                        self.sendResponse(remoteAddress[0], remoteAddress[1], packet.messageid,
+                                        None, macros.COAP_TYPE.COAP_ACK,
+                                        macros.COAP_CONTENT_FORMAT.COAP_NONE, packet.token)
+                    if self.resposeCallback is not None:
+                        self.resposeCallback(packet, remoteAddress)
             return True
 
         return False

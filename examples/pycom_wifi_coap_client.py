@@ -8,7 +8,7 @@ _MY_SSID = 'myssid'
 _MY_PASS = 'mypass'
 _SERVER_IP = '192.168.1.2'
 _SERVER_PORT = 5683  # default CoAP port
-_COAP_URL = 'to/a/path'
+_COAP_POST_URL = 'to/a/path'
 
 
 def connectToWiFi():
@@ -27,35 +27,37 @@ def connectToWiFi():
 
 def sendPostRequest(client):
     # About to post message...
-    bytesTransferred = client.post(_SERVER_IP, _SERVER_PORT, _COAP_URL, "test",
+    messageId = client.post(_SERVER_IP, _SERVER_PORT, _COAP_POST_URL, "test",
                                    None, microcoapy.COAP_CONTENT_FORMAT.COAP_TEXT_PLAIN)
-    print("[POST] Sent bytes: ", bytesTransferred)
+    print("[POST] Message Id: ", messageId)
 
     # wait for respose to our request for 2 seconds
-    client.poll(2000)
+    client.poll(10000)
 
 
 def sendPutRequest(client):
     # About to post message...
-    bytesTransferred = client.put(_SERVER_IP, _SERVER_PORT, "led/turnOn", "test",
-                                   None, microcoapy.COAP_CONTENT_FORMAT.COAP_TEXT_PLAIN)
-    print("[PUT] Sent bytes: ", bytesTransferred)
+    messageId = client.put(_SERVER_IP, _SERVER_PORT, "led/turnOn", "test",
+                                   "authorization=1234567",
+                                   microcoapy.COAP_CONTENT_FORMAT.COAP_TEXT_PLAIN)
+    print("[PUT] Message Id: ", messageId)
 
     # wait for respose to our request for 2 seconds
-    client.poll(2000)
+    client.poll(10000)
 
 
 def sendGetRequest(client):
     # About to post message...
-    bytesTransferred = client.get(_SERVER_IP, _SERVER_PORT, "current/measure")
-    print("[GET] Sent bytes: ", bytesTransferred)
+    messageId = client.get(_SERVER_IP, _SERVER_PORT, "current/measure")
+    print("[GET] Message Id: ", messageId)
 
     # wait for respose to our request for 2 seconds
-    client.poll(2000)
+    client.poll(10000)
 
 
 def receivedMessageCallback(packet, sender):
-        print('Message received:', packet, ', from: ', sender)
+    print('Message received:', packet.toString(), ', from: ', sender)
+
 
 
 connectToWiFi()
