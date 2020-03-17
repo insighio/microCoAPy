@@ -5,17 +5,6 @@ The main difference compared to the established Python implementations [aiocoap]
 
 The first goal of this implementation is to provide basic functionality to send and receive data. DTLS and/or any special features of CoAP as defined in the RFC's, will be examined and implemented in the future.
 
----
-# Breaking change 02-01-2020
-To comply the library parameter values with the namings of RFC 7252, some parameter names have changed. In case these parameters are used in your project, please update them accordingly.
-
-* @ CoapPacket
-    * rename [self.code] to [self.method]
-    * rename [self.contentType] to [self.content_format]
-* coap_macros
-    * rename [COAP_CONTENT_TYPE] to [COAP_CONTENT_FORMAT]
----
-
 # Table of contents
 - [Tested boards](#tested-boards)
 - [Documentation](https://github.com/insighio/microCoAPy/wiki)
@@ -51,8 +40,8 @@ import microcoapy
 # your code to connect to the network
 #...
 def receivedMessageCallback(packet, sender):
-        print('Message received:', packet, ', from: ', sender)
-        print('Mesage payload: ', packet.payload.decode('unicode_escape'))
+        print('Message received:', packet.toString(), ', from: ', sender)
+        print('Message payload: ', packet.payload.decode('unicode_escape'))
 
 client = microcoapy.Coap()
 client.resposeCallback = receivedMessageCallback
@@ -73,13 +62,13 @@ Lets examine the above code and explain its purpose.
 
 ```python
 def receivedMessageCallback(packet, sender):
-        print('Message received:', packet, ', from: ', sender)
-        print('Mesage payload: ', packet.payload.decode('unicode_escape'))
+        print('Message received:', packet.toString(), ', from: ', sender)
+        print('Message payload: ', packet.payload.decode('unicode_escape'))
 
 client = microcoapy.Coap()
 client.resposeCallback = receivedMessageCallback
 ```
-During this step, the CoAP object get initialized. A callback handler is also created to get notifications from the server regarding our requests. __It is not used for incoming requests.__ 
+During this step, the CoAP object get initialized. A callback handler is also created to get notifications from the server regarding our requests. __It is not used for incoming requests.__
 
 When instantiating new Coap object, a custom port can be optionally configured: *client = microcoapy.Coap(5683)*.
 
@@ -137,10 +126,10 @@ import microcoapy
 client = microcoapy.Coap()
 
 def measureCurrent(packet, senderIp, senderPort):
-    print('Measure-current request received:', packet, ', from: ', senderIp, ":", senderPort)
+    print('Measure-current request received: ', packet.toString(), ', from: ', senderIp, ":", senderPort)
     client.sendResponse(senderIp, senderPort, packet.messageid,
-                      None, microcoapy.COAP_RESPONSE_CODE.COAP_CONTENT,
-                      microcoapy.COAP_CONTENT_FORMAT.COAP_NONE, "222")
+                      "222", microcoapy.COAP_RESPONSE_CODE.COAP_CONTENT,
+                      microcoapy.COAP_CONTENT_FORMAT.COAP_NONE, packet.token)
 
 client.addIncomingRequestCallback('current/measure', measureCurrent)
 
@@ -160,10 +149,10 @@ Lets examine the above code and explain its purpose. For details on [_start_](ht
 
 ```python
 def measureCurrent(packet, senderIp, senderPort):
-    print('Measure-current request received:', packet, ', from: ', senderIp, ":", senderPort)
+    print('Measure-current request received: ', packet.toString(), ', from: ', senderIp, ":", senderPort)
     client.sendResponse(senderIp, senderPort, packet.messageid,
-                      None, microcoapy.COAP_RESPONSE_CODE.COAP_CONTENT,
-                      microcoapy.COAP_CONTENT_FORMAT.COAP_NONE, "222")
+                      "222", microcoapy.COAP_RESPONSE_CODE.COAP_CONTENT,
+                      microcoapy.COAP_CONTENT_FORMAT.COAP_NONE, packet.token)
 
 client.addIncomingRequestCallback('current/measure', measureCurrent)
 ```
@@ -186,20 +175,20 @@ while time.ticks_diff(time.ticks_ms(), start_time) < timeoutMs:
 Finally, since the functions [_loop_](https://github.com/insighio/microCoAPy/wiki#loopblocking) and [_poll_](https://github.com/insighio/microCoAPy/wiki#polltimeoutms-pollperiodms) __can handle a since packet per run__, we wrap its call to a while loop and wait for incoming messages.
 
 ## Custom sockets
-By using default functions __microcoapy.Coap().start()__ and __microcoapy.Coap().stop()__ the Coap library handles the creation of a  UDP socket from **usocket module** at the default port 5683 (if no other is defined when Coap object gets instantiated). 
+By using default functions __microcoapy.Coap().start()__ and __microcoapy.Coap().stop()__ the Coap library handles the creation of a  UDP socket from **usocket module** at the default port 5683 (if no other is defined when Coap object gets instantiated).
 
-If this socket type is not the appropriate for your project, custom socket instances can be used instead. 
+If this socket type is not the appropriate for your project, custom socket instances can be used instead.
 
-Lets consider the case of supporting an external GSM modem connected via Serial on the board and that there is no direct support of this modem from default modules like **network.LTE**. In this case there is no guarranty that a typical UDP socket from usocket module will be functional. Thus, a custom socket instance needs to be created. 
+Lets consider the case of supporting an external GSM modem connected via Serial on the board and that there is no direct support of this modem from default modules like **network.LTE**. In this case there is no guarranty that a typical UDP socket from usocket module will be functional. Thus, a custom socket instance needs to be created.
 
-The custom socket needs to implement the functions: 
+The custom socket needs to implement the functions:
 * sendto(self, bytes, address) : returns the number of bytes transmitted
 * recvfrom(self, bufsize): returns a byte array
 * setblocking(self, flag)
 
 Example:
 
-```python 
+```python
 ## Custom socket implementation
 class CustomSocket:
     def __init__(self):
@@ -217,7 +206,7 @@ class CustomSocket:
         print(".", end="")
 ```
 
-After creating the custom socket, it is utilized by the Coap instance after calling [microcoapy.Coap.setCustomSocket(customSocket)](https://github.com/insighio/microCoAPy/wiki#setcustomsocketcustom_socket). 
+After creating the custom socket, it is utilized by the Coap instance after calling [microcoapy.Coap.setCustomSocket(customSocket)](https://github.com/insighio/microCoAPy/wiki#setcustomsocketcustom_socket).
 
 Example:
 
