@@ -62,7 +62,7 @@ class Coap:
 
     def addIncomingRequestCallback(self, requestUrl, callback):
         self.callbacks[requestUrl] = callback
-        self.isServer = true
+        self.isServer = True
 
     def sendPacket(self, ip, port, coapPacket):
         if coapPacket.content_format != macros.COAP_CONTENT_FORMAT.COAP_NONE:
@@ -132,6 +132,7 @@ class Coap:
 
         return self.sendPacket(ip, port, packet)
 
+    #Confirmable
     def get(self, ip, port, url, token=bytearray()):
         return self.send(ip, port, url, macros.COAP_TYPE.COAP_CON, macros.COAP_METHOD.COAP_GET, token, None, macros.COAP_CONTENT_FORMAT.COAP_NONE, None)
 
@@ -140,6 +141,16 @@ class Coap:
 
     def post(self, ip, port, url, payload=bytearray(), query_option=None, content_format=macros.COAP_CONTENT_FORMAT.COAP_NONE, token=bytearray()):
         return self.send(ip, port, url, macros.COAP_TYPE.COAP_CON, macros.COAP_METHOD.COAP_POST, token, payload, content_format, query_option)
+
+    #non Confirmable
+    def get(self, ip, port, url, token=bytearray()):
+        return self.send(ip, port, url, macros.COAP_TYPE.COAP_NONCON, macros.COAP_METHOD.COAP_GET, token, None, macros.COAP_CONTENT_FORMAT.COAP_NONE, None)
+
+    def put(self, ip, port, url, payload=bytearray(), query_option=None, content_format=macros.COAP_CONTENT_FORMAT.COAP_NONE, token=bytearray()):
+        return self.send(ip, port, url, macros.COAP_TYPE.COAP_NONCON, macros.COAP_METHOD.COAP_PUT, token, payload, content_format, query_option)
+
+    def post(self, ip, port, url, payload=bytearray(), query_option=None, content_format=macros.COAP_CONTENT_FORMAT.COAP_NONE, token=bytearray()):
+        return self.send(ip, port, url, macros.COAP_TYPE.COAP_NONCON, macros.COAP_METHOD.COAP_POST, token, payload, content_format, query_option)
 
     def handleIncomingRequest(self, requestPacket, sourceIp, sourcePort):
         url = ""
@@ -231,5 +242,9 @@ class Coap:
 
     def poll(self, timeoutMs=-1, pollPeriodMs=500):
         start_time = time.ticks_ms()
-        while not self.loop(False) and (time.ticks_diff(time.ticks_ms(), start_time) < timeoutMs):
+        status = False
+        while not status:
+            status = self.loop(False)
+            if (time.ticks_diff(time.ticks_ms(), start_time) >= timeoutMs): break
             time.sleep_ms(pollPeriodMs)
+        return status
