@@ -143,13 +143,13 @@ class Coap:
         return self.send(ip, port, url, macros.COAP_TYPE.COAP_CON, macros.COAP_METHOD.COAP_POST, token, payload, content_format, query_option)
 
     #non Confirmable
-    def get(self, ip, port, url, token=bytearray()):
+    def getNonConf(self, ip, port, url, token=bytearray()):
         return self.send(ip, port, url, macros.COAP_TYPE.COAP_NONCON, macros.COAP_METHOD.COAP_GET, token, None, macros.COAP_CONTENT_FORMAT.COAP_NONE, None)
 
-    def put(self, ip, port, url, payload=bytearray(), query_option=None, content_format=macros.COAP_CONTENT_FORMAT.COAP_NONE, token=bytearray()):
+    def putNonConf(self, ip, port, url, payload=bytearray(), query_option=None, content_format=macros.COAP_CONTENT_FORMAT.COAP_NONE, token=bytearray()):
         return self.send(ip, port, url, macros.COAP_TYPE.COAP_NONCON, macros.COAP_METHOD.COAP_PUT, token, payload, content_format, query_option)
 
-    def post(self, ip, port, url, payload=bytearray(), query_option=None, content_format=macros.COAP_CONTENT_FORMAT.COAP_NONE, token=bytearray()):
+    def postNonConf(self, ip, port, url, payload=bytearray(), query_option=None, content_format=macros.COAP_CONTENT_FORMAT.COAP_NONE, token=bytearray()):
         return self.send(ip, port, url, macros.COAP_TYPE.COAP_NONCON, macros.COAP_METHOD.COAP_POST, token, payload, content_format, query_option)
 
     def handleIncomingRequest(self, requestPacket, sourceIp, sourcePort):
