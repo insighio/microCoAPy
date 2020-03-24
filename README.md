@@ -222,6 +222,28 @@ customSocket = CustomSocket()
 client.setCustomSocket(customSocket)
 ```
 
+# Beta features under implementation or evaluation
+
+## Discard incomming retransmission
+
+If a received message is the same as the previously message received, it can be discarded. In that case, the poll function will not return at the time of retrieval and will continue to listen for futher incomming messages. Finally the defined responseCallback will not be called. 
+
+By default this simplistic feature is disabled. To enable:
+
+```python
+client = microcoapy.Coap()
+client.discardRetransmissions = True
+```
+
+## Activate / Deactivate debug messages
+
+By default, debug prints in microcoapy are enabled. Though, the user can deactivate the prints per Coap instance:
+
+```python
+client = microcoapy.Coap()
+client.debug = False
+```
+
 # Future work
 
 * Since this library is quite fresh, the next period will be full of testing.

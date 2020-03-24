@@ -12,12 +12,6 @@ from microcoapy.coap_writer import writePacketPayload
 
 import binascii
 
-MICROCOAPY_DEBUG = True
-
-def log(s):
-    if MICROCOAPY_DEBUG:
-        print(s)
-
 class Coap:
     TRANSMISSION_STATE = macros.enum(
         STATE_IDLE = 0,
@@ -25,7 +19,7 @@ class Coap:
     )
 
     def __init__(self):
-        self.debug = False
+        self.debug = True
         self.sock = None
         self.callbacks = {}
         self.resposeCallback = None
@@ -33,6 +27,13 @@ class Coap:
         self.isServer = False
         self.state = self.TRANSMISSION_STATE.STATE_IDLE
 
+        #beta flags
+        self.discardRetransmissions = False
+        self.lastPacketStr = ""
+
+    def log(self, s):
+        if self.debug:
+            print("[microcoapy]: " + s)
 
     # Create and initialize a new UDP socket to listen to.
     # port: the local port to be used.
@@ -88,7 +89,7 @@ class Coap:
             if status > 0:
                 status = coapPacket.messageid
 
-            log('Packet sent. messageid: ' + str(status))
+            self.log('Packet sent. messageid: ' + str(status))
         except Exception as e:
             status = 0
             print('Exception while sending packet...')
@@ -208,7 +209,7 @@ class Coap:
 
             packet = CoapPacket()
 
-            log("Packet bytes: " + str(binascii.hexlify(bytearray(buffer))))
+            self.log("Incoming Packet bytes: " + str(binascii.hexlify(bytearray(buffer))))
 
             parsePacketHeaderInfo(buffer, packet)
 
@@ -217,6 +218,15 @@ class Coap:
 
             if not parsePacketOptionsAndPayload(buffer, packet):
                 return False
+
+            # beta functionality
+            if self.discardRetransmissions:
+                if packet.toString() == self.lastPacketStr:
+                    self.log("Discarded retransmission message: " + packet.toString())
+                    return False
+                else:
+                    self.lastPacketStr = packet.toString()
+            ####
 
             if self.isServer:
                 self.handleIncomingRequest(packet, remoteAddress[0], remoteAddress[1])
