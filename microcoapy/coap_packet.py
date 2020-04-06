@@ -13,6 +13,14 @@ class CoapPacket:
         self.query = bytearray()  # uint8_t*
         self.options = []
 
+    # def __eq__(self, other):
+    #     return self.toString() == other.toString()
+        # (self.version == other.version and self.type == other.type and\
+        #     self.method == other.method and self.token == other.token and\
+        #     self.payload == other.payload and self.messageid == other.messageid and\
+        #     self.content_format == other.content_format and self.query == other.query and\
+        #     self.options == other.options)
+
     def addOption(self, number, opt_payload):
         if(len(self.options) >= macros._MAX_OPTION_NUM):
             return

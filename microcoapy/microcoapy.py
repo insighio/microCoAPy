@@ -26,6 +26,7 @@ class Coap:
         self.port = 0
         self.isServer = False
         self.state = self.TRANSMISSION_STATE.STATE_IDLE
+        self.isCustomSocket = False
 
         #beta flags
         self.discardRetransmissions = False
@@ -59,6 +60,7 @@ class Coap:
     # * socket.setblocking(flag)
     def setCustomSocket(self, custom_socket):
         self.stop()
+        self.isCustomSocket = True
         self.sock = custom_socket
 
     def addIncomingRequestCallback(self, requestUrl, callback):
@@ -84,8 +86,12 @@ class Coap:
 
         status = 0
         try:
-            sockaddr = socket.getaddrinfo(ip, port)[0][-1]
-            status = self.sock.sendto(buffer, sockaddr)
+            if(self.isCustomSocket and not self.sock.isUnixCompatible()):
+                status = self.sock.sendto(buffer, ip, port)
+            else:
+                sockaddr = socket.getaddrinfo(ip, port)[0][-1]
+                status = self.sock.sendto(buffer, sockaddr)
+
             if status > 0:
                 status = coapPacket.messageid
 
