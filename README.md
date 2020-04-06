@@ -222,11 +222,17 @@ customSocket = CustomSocket()
 client.setCustomSocket(customSocket)
 ```
 
+## Pycom custom socket based on AT commands
+
+Since most of the implementations of NBIoT networks are based on IPv6, it was essential to move to a custom implementation of UDP socket, as Pycom do not yet support natively IPv6 sockets. Thus, in (examples/pycom/nbiot/pycom_at_socket.py) you can find a complete implementation of a sample socket that directly uses Sequans AT commands. 
+
+NOTE: The socket to work without limitations, needs custom built Pycom firmware based on the PR https://github.com/pycom/pycom-micropython-sigfox/pull/429  that handles the transmittion of long AT command messages. If the default firmware is used, the COAP message MUST fit within 62 bytes, or else it will fail.  
+
 # Beta features under implementation or evaluation
 
-## Discard incomming retransmission
+## Discard incoming retransmission
 
-If a received message is the same as the previously message received, it can be discarded. In that case, the poll function will not return at the time of retrieval and will continue to listen for futher incomming messages. Finally the defined responseCallback will not be called. 
+If a received message is the same as the previously message received, it can be discarded. In that case, the poll function will not return at the time of retrieval and will continue to listen for futher incomming messages. Finally the defined responseCallback will not be called.
 
 By default this simplistic feature is disabled. To enable:
 
