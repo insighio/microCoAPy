@@ -16,6 +16,10 @@ The first goal of this implementation is to provide basic functionality to send 
     - [Example of usage](#example-of-usage-1)
       - [Code explained](#code-explained-1)
   - [Custom sockets](#custom-sockets)
+  - [Pycom custom socket based on AT commands](#pycom-custom-socket-based-on-at-commands)
+- [Beta features under implementation or evaluation](#beta-features-under-implementation-or-evaluation)
+  - [Discard incoming retransmission](#discard-incoming-retransmission)
+  - [Activate debug messages](#activate-debug-messages)
 - [Future work](#future-work)
 - [Issues and contributions](#issues-and-contributions)
 
@@ -60,7 +64,9 @@ client.stop()
 #### Code explained
 Lets examine the above code and explain its purpose.
 
-```python
+```pythonmple-of-usage)
+14
+      - [Code explained](#cod
 def receivedMessageCallback(packet, sender):
         print('Message received:', packet.toString(), ', from: ', sender)
         print('Message payload: ', packet.payload.decode('unicode_escape'))
@@ -224,7 +230,7 @@ client.setCustomSocket(customSocket)
 
 ## Pycom custom socket based on AT commands
 
-Since most of the implementations of NBIoT networks are based on IPv6, it was essential to move to a custom implementation of UDP socket, as Pycom do not yet support natively IPv6 sockets. Thus, in (examples/pycom/nbiot/pycom_at_socket.py) you can find a complete implementation of a sample socket that directly uses Sequans AT commands. 
+Since most of the implementations of NBIoT networks are based on IPv6, it was essential to move to a custom implementation of UDP socket, as Pycom do not yet support natively IPv6 sockets. Thus, in [examples/pycom/nbiot/pycom_at_socket.py](https://github.com/insighio/microCoAPy/blob/master/examples/pycom/nbiot/pycom_at_socket.py) you can find a complete implementation of a sample socket that directly uses Sequans AT commands. 
 
 NOTE: The socket to work without limitations, needs custom built Pycom firmware based on the PR https://github.com/pycom/pycom-micropython-sigfox/pull/429  that handles the transmittion of long AT command messages. If the default firmware is used, the COAP message MUST fit within 62 bytes, or else it will fail.  
 
@@ -241,7 +247,7 @@ client = microcoapy.Coap()
 client.discardRetransmissions = True
 ```
 
-## Activate / Deactivate debug messages
+## Activate debug messages
 
 By default, debug prints in microcoapy are enabled. Though, the user can deactivate the prints per Coap instance:
 
