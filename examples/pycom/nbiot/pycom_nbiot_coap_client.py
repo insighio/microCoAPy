@@ -34,13 +34,14 @@ def connectNBIoT(timeout):
     print("")
     return lte.isattached()
 
+
 def disconnectNBIoT():
-    LTE().disconnect()
+    LTE().detach()
 
 
 def sendPostRequest(client):
     # About to post message...
-    messageId = client.post(_SERVER_IP, _SERVER_PORT, _COAP_POST_URL, '[{"bn":"09876543","n":"batt","u":"V","v":13}]',
+    messageId = client.post(_SERVER_IP, _SERVER_PORT, _COAP_POST_URL, '[{"bn":"09876543","n":"batt","u":"V","v":12}]',
                                    "authorization=123456789", microcoapy.COAP_CONTENT_FORMAT.COAP_APPLICATION_JSON)
     print("[POST] Message Id: ", messageId)
 
@@ -50,7 +51,6 @@ def sendPostRequest(client):
 
 def receivedMessageCallback(packet, sender):
     print('Message received:', packet.toString(), ', from: ', sender)
-
 
 
 connected = connectNBIoT(_NBIOT_MAX_CONNECTION_TIMEOUT_MSEC)

@@ -86,11 +86,13 @@ class Coap:
 
         status = 0
         try:
-            if(self.isCustomSocket and not self.sock.isUnixCompatible()):
-                status = self.sock.sendto(buffer, ip, port)
-            else:
+            sockaddr = (ip, port)
+            try:
                 sockaddr = socket.getaddrinfo(ip, port)[0][-1]
-                status = self.sock.sendto(buffer, sockaddr)
+            except Exception as e:
+                pass
+
+            status = self.sock.sendto(buffer, sockaddr)
 
             if status > 0:
                 status = coapPacket.messageid
