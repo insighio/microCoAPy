@@ -18,9 +18,6 @@ class PycomATSocket:
         self.recvRegex = "\+SQNSRING: (\\d+),(\\d+)"
         self.modem = modem
 
-    def isUnixCompatible(self):
-        return False
-
     def sendAtCommand(self, command, timeout = 11000):
         print("[AT] => " + str(command))
         response = self.modem.send_at_cmd(command, timeout)
@@ -29,6 +26,18 @@ class PycomATSocket:
 
     def open(self, ip, port):
         self.socketid = None
+
+        if(self.ip == ip or self.port == port and self.socketid != None):
+            return True
+
+        if(self.ip == None and self.port == None):
+            self.ip = ip
+            self.port = port
+            self.socketid = None
+
+        if(self.socketid != None):
+            self.close()
+
         # after opening socket, set sent data format to heximal
         # AT+SQNSCFGEXT=<connId>,
         #               <incoming message notification to include byte length>,
@@ -60,19 +69,13 @@ class PycomATSocket:
     def close(self):
         if self.socketid != None:
             response = self.sendAtCommand('AT+SQNSH=1')
+            self.socketid == None
 
-    def sendto(self, bytes, ip,  port):
-        if(self.ip == None and self.port == None):
-            self.ip = ip
-            self.port = port
-            self.socketid = None
+    def sendto(self, bytes, address):
+        ip = address[0]
+        port = address[1]
 
-        if(self.ip == ip and self.port == port and self.socketid == None) or self.ip != ip or self.port != port:
-            if(self.socketid != None):
-                self.close()
-            self.open(ip, port)
-
-        if(self.socketid == None):
+        if(not self.open(ip, port)):
             print("Failed to open socket, aborting.")
             return -1
 
@@ -91,6 +94,11 @@ class PycomATSocket:
     def recvfrom(self, bufsize):
         # send empty space to wait for an incoming notification from SQNSRING
         badResult = (None, None)
+
+        if(not self.open(self.ip, self.port)):
+            print("Failed to open socket, aborting.")
+            return badResult
+
         resp = self.sendAtCommand(" ")
 
         # search for the URC
