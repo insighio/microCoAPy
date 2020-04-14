@@ -4,7 +4,7 @@ import utime
 import binascii
 import microcoapy
 
-from pycom_at_socket import PycomATSocket
+import microATsocket.microATsocket as socket
 
 _NBIOT_MAX_CONNECTION_TIMEOUT_MSEC=30000
 _NBIOT_APN="iot"
@@ -41,7 +41,7 @@ def disconnectNBIoT():
 
 def sendPostRequest(client):
     # About to post message...
-    messageId = client.post(_SERVER_IP, _SERVER_PORT, _COAP_POST_URL, '[{"bn":"09876543","n":"batt","u":"V","v":12}]',
+    messageId = client.post(_SERVER_IP, _SERVER_PORT, _COAP_POST_URL, '[{"bn":"09876543aacc","n":"batt","u":"V","v":12}]',
                                    "authorization=123456789", microcoapy.COAP_CONTENT_FORMAT.COAP_APPLICATION_JSON)
     print("[POST] Message Id: ", messageId)
 
@@ -62,13 +62,14 @@ if(connected):
     client.resposeCallback = receivedMessageCallback
 
     # Initialize custom socket
-    customSocket = PycomATSocket(lte)
+    sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+    sock.setModemInstance(lte)
 
     # Use custom socket to all operations of CoAP
-    client.setCustomSocket(customSocket)
+    client.setCustomSocket(sock)
 
     sendPostRequest(client)
 
-    customSocket.close()
+    sock.close()
 
 disconnectNBIoT()

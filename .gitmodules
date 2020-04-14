@@ -1,0 +1,3 @@
+[submodule "examples/pycom/nbiot/microATsocket"]
+	path = examples/pycom/nbiot/microATsocket
+	url = https://github.com/insighio/microATsocket
