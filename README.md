@@ -64,9 +64,7 @@ client.stop()
 #### Code explained
 Lets examine the above code and explain its purpose.
 
-```pythonmple-of-usage)
-14
-      - [Code explained](#cod
+```python
 def receivedMessageCallback(packet, sender):
         print('Message received:', packet.toString(), ', from: ', sender)
         print('Message payload: ', packet.payload.decode('unicode_escape'))
@@ -232,7 +230,9 @@ client.setCustomSocket(customSocket)
 
 Since most of the implementations of NBIoT networks are based on IPv6, it was essential to move to a custom implementation of UDP socket, as Pycom do not yet support natively IPv6 sockets. Thus, in [examples/pycom/nbiot/pycom_at_socket.py](https://github.com/insighio/microCoAPy/blob/master/examples/pycom/nbiot/pycom_at_socket.py) you can find a complete implementation of a sample socket that directly uses Sequans AT commands. 
 
-NOTE: The socket to work without limitations, needs custom built Pycom firmware based on the PR https://github.com/pycom/pycom-micropython-sigfox/pull/429  that handles the transmittion of long AT command messages. If the default firmware is used, the COAP message MUST fit within 62 bytes, or else it will fail.  
+NOTE: The socket to work without limitations needs one of the following Pycom firmwares:
+* [Pygate Firmware Release v1.20.2.rc11](https://github.com/pycom/pycom-micropython-sigfox/releases/tag/v1.20.2.rc11_pygate) (or newer)
+* [Firmware Release v1.20.2.r1](https://github.com/pycom/pycom-micropython-sigfox/releases/tag/v1.20.2.r1) (or newer)
 
 # Beta features under implementation or evaluation
 
