@@ -1,14 +1,14 @@
 import usocket as socket
 import uos
 import utime as time
-import microcoapy.coap_macros as macros
-from microcoapy.coap_packet import CoapPacket
+from . import coap_macros as macros
+from .coap_packet import CoapPacket
 
-from microcoapy.coap_reader import parsePacketHeaderInfo
-from microcoapy.coap_reader import parsePacketOptionsAndPayload
-from microcoapy.coap_writer import writePacketHeaderInfo
-from microcoapy.coap_writer import writePacketOptions
-from microcoapy.coap_writer import writePacketPayload
+from .coap_reader import parsePacketHeaderInfo
+from .coap_reader import parsePacketOptionsAndPayload
+from .coap_writer import writePacketHeaderInfo
+from .coap_writer import writePacketOptions
+from .coap_writer import writePacketPayload
 
 import binascii
 

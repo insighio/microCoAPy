@@ -1,5 +1,5 @@
-import microcoapy.coap_macros as macros
-from microcoapy.coap_option import CoapOption
+from . import coap_macros as macros
+from .coap_option import CoapOption
 
 def parseOption(packet, runningDelta, buffer, i):
     option = CoapOption()

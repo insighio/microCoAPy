@@ -1,5 +1,5 @@
-from microcoapy.coap_macros import _BUF_MAX_SIZE
-from microcoapy.coap_macros import COAP_VERSION
+from .coap_macros import _BUF_MAX_SIZE
+from .coap_macros import COAP_VERSION
 
 def CoapOptionDelta(v):
     if v < 13:
