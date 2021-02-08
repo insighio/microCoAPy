@@ -31,7 +31,7 @@ def sendPostRequest(client):
                                    None, microcoapy.COAP_CONTENT_FORMAT.COAP_TEXT_PLAIN)
     print("[POST] Message Id: ", messageId)
 
-    # wait for respose to our request for 2 seconds
+    # wait for response to our request for 2 seconds
     client.poll(10000)
 
 
@@ -42,7 +42,7 @@ def sendPutRequest(client):
                                    microcoapy.COAP_CONTENT_FORMAT.COAP_TEXT_PLAIN)
     print("[PUT] Message Id: ", messageId)
 
-    # wait for respose to our request for 2 seconds
+    # wait for response to our request for 2 seconds
     client.poll(10000)
 
 
@@ -51,7 +51,7 @@ def sendGetRequest(client):
     messageId = client.get(_SERVER_IP, _SERVER_PORT, "current/measure")
     print("[GET] Message Id: ", messageId)
 
-    # wait for respose to our request for 2 seconds
+    # wait for response to our request for 2 seconds
     client.poll(10000)
 
 
@@ -63,8 +63,8 @@ def receivedMessageCallback(packet, sender):
 connectToWiFi()
 
 client = microcoapy.Coap()
-# setup callback for incoming respose to a request
-client.resposeCallback = receivedMessageCallback
+# setup callback for incoming response to a request
+client.responseCallback = receivedMessageCallback
 
 # Starting CoAP...
 client.start()

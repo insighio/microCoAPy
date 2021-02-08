@@ -22,7 +22,7 @@ class Coap:
         self.debug = True
         self.sock = None
         self.callbacks = {}
-        self.resposeCallback = None
+        self.responseCallback = None
         self.port = 0
         self.isServer = False
         self.state = self.TRANSMISSION_STATE.STATE_IDLE
@@ -252,8 +252,8 @@ class Coap:
                         self.sendResponse(remoteAddress[0], remoteAddress[1], packet.messageid,
                                         None, macros.COAP_TYPE.COAP_ACK,
                                         macros.COAP_CONTENT_FORMAT.COAP_NONE, packet.token)
-                    if self.resposeCallback is not None:
-                        self.resposeCallback(packet, remoteAddress)
+                    if self.responseCallback is not None:
+                        self.responseCallback(packet, remoteAddress)
             return True
 
         return False
