@@ -42,7 +42,7 @@ def measureCurrent(packet, senderIp, senderPort):
                       microcoapy.COAP_CONTENT_FORMAT.COAP_NONE, packet.token)
 
 client = microcoapy.Coap()
-# setup callback for incoming respose to a request
+# setup callback for incoming response to a request
 client.addIncomingRequestCallback('led/turnOn', turnOnLed)
 client.addIncomingRequestCallback('current/measure', measureCurrent)
 

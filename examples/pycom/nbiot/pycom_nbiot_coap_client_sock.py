@@ -49,7 +49,7 @@ def sendPostRequest(client):
                                    "authorization=123456789", microcoapy.COAP_CONTENT_FORMAT.COAP_APPLICATION_JSON)
     print("[POST] Message Id: ", messageId)
 
-    # wait for respose to our request for 2 seconds
+    # wait for response to our request for 2 seconds
     client.poll(10000)
 
 
@@ -63,7 +63,7 @@ print("LTE ok: " + str(connected))
 
 if(connected):
     client = microcoapy.Coap()
-    # setup callback for incoming respose to a request
+    # setup callback for incoming response to a request
     client.start()
 
     sendPostRequest(client)

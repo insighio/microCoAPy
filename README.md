@@ -48,7 +48,7 @@ def receivedMessageCallback(packet, sender):
         print('Message payload: ', packet.payload.decode('unicode_escape'))
 
 client = microcoapy.Coap()
-client.resposeCallback = receivedMessageCallback
+client.responseCallback = receivedMessageCallback
 client.start()
 
 _SERVER_IP="192.168.1.2"
@@ -70,7 +70,7 @@ def receivedMessageCallback(packet, sender):
         print('Message payload: ', packet.payload.decode('unicode_escape'))
 
 client = microcoapy.Coap()
-client.resposeCallback = receivedMessageCallback
+client.responseCallback = receivedMessageCallback
 ```
 During this step, the CoAP object get initialized. A callback handler is also created to get notifications from the server regarding our requests. __It is not used for incoming requests.__
 
@@ -216,8 +216,8 @@ Example:
 
 ```python
 client = microcoapy.Coap()
-# setup callback for incoming respose to a request
-client.resposeCallback = receivedMessageCallback
+# setup callback for incoming response to a request
+client.responseCallback = receivedMessageCallback
 
 # Initialize custom socket
 customSocket = CustomSocket()
