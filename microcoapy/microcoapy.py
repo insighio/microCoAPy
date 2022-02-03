@@ -174,12 +174,17 @@ class Coap:
             urlCallback = self.callbacks.get(url)
 
         if urlCallback is None:
+            if self.responseCallback:
+                # The incoming request may be a response, let the responseCallback handle it.
+                return False
             print('Callback for url [', url, "] not found")
             self.sendResponse(sourceIp, sourcePort, requestPacket.messageid,
                               None, macros.COAP_RESPONSE_CODE.COAP_NOT_FOUND,
                               macros.COAP_CONTENT_FORMAT.COAP_NONE, requestPacket.token)
+
         else:
             urlCallback(requestPacket, sourceIp, sourcePort)
+        return True
 
     def readBytesFromSocket(self, numOfBytes):
         try:
@@ -236,9 +241,7 @@ class Coap:
                     self.lastPacketStr = packet.toString()
             ####
 
-            if self.isServer:
-                self.handleIncomingRequest(packet, remoteAddress[0], remoteAddress[1])
-            else:
+            if not self.isServer or not self.handleIncomingRequest(packet, remoteAddress[0], remoteAddress[1]):
                 # To handle cases of Separate response (rfc7252 #5.2.2)
                 if packet.type == macros.COAP_TYPE.COAP_ACK and\
                     packet.method == macros.COAP_METHOD.COAP_EMPTY_MESSAGE:
