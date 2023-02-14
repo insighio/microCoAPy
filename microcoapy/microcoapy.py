@@ -253,7 +253,7 @@ class Coap:
                     if self.state == self.TRANSMISSION_STATE.STATE_SEPARATE_ACK_RECEIVED_WAITING_DATA:
                         self.state = self.TRANSMISSION_STATE.STATE_IDLE
                         self.sendResponse(remoteAddress[0], remoteAddress[1], packet.messageid,
-                                        None, macros.COAP_TYPE.COAP_ACK,
+                                        None, macros.COAP_METHOD.COAP_EMPTY_MESSAGE,
                                         macros.COAP_CONTENT_FORMAT.COAP_NONE, packet.token)
                     if self.responseCallback is not None:
                         self.responseCallback(packet, remoteAddress)
