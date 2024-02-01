@@ -1,5 +1,5 @@
 try:
-    import usocket
+    import usocket as socket
 except ImportError:
     pass
 import uos
