@@ -1,4 +1,7 @@
-import usocket as socket
+try:
+    import usocket as socket
+except ImportError:
+    pass
 import uos
 import utime as time
 from . import coap_macros as macros
