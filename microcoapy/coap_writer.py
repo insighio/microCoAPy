@@ -29,7 +29,8 @@ def writePacketHeaderInfo(buffer, packet):
 def writePacketOptions(buffer, packet):
     runningDelta = 0
     # make option header
-    for opt in packet.options:
+    # Process the options in ascending order of option number for correct delta computation.
+    for opt in sorted(packet.options, key=lambda x: x.number):
         if (opt is None) or (opt.buffer is None) or (len(opt.buffer) == 0):
             continue
 
