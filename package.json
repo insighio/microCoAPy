@@ -9,10 +9,6 @@
     ["microcoapy/coap_writer.py", "microcoapy/coap_writer.py"]
   ],
   "deps": [
-    ["socket", "latest"],
-    ["os", "latest"],
-    ["time", "latest"],
-    ["binascii", "latest"]
   ],
   "version": "0.5.1"
 }
