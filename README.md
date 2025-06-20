@@ -1,4 +1,5 @@
 # microCoAPy
+
 A mini implementation of CoAP (Constrained Application Protocol) into MicroPython
 
 The main difference compared to the established Python implementations [aiocoap](https://github.com/chrysn/aiocoap) and [CoAPthon](https://github.com/Tanganelli/CoAPthon) is its size and complexity since this library will be used on microcontrollers that support MicroPython such as: Pycom devices, ESP32, ESP8266.
@@ -6,8 +7,10 @@ The main difference compared to the established Python implementations [aiocoap]
 The first goal of this implementation is to provide basic functionality to send and receive data. DTLS and/or any special features of CoAP as defined in the RFC's, will be examined and implemented in the future.
 
 # Table of contents
+
 - [Tested boards](#tested-boards)
 - [Documentation](https://github.com/insighio/microCoAPy/wiki)
+- [Installation](#installation)
 - [Supported operations](#supported-operations)
   - [CoAP client](#coap-client)
     - [Example of usage](#example-of-usage)
@@ -24,20 +27,37 @@ The first goal of this implementation is to provide basic functionality to send 
 - [Issues and contributions](#issues-and-contributions)
 
 # Tested boards
-* Pycom: all Pycom boards
-* ESP32
-* ESP8266
+
+- Pycom: all Pycom boards
+- ESP32
+- ESP8266
+
+# Installation
+
+## Using `mip`
+
+For network connected devices, call:
+
+```
+import mip
+mip.install("github:insighio/microCoAPy")
+```
+
+## File Transfer
+
+Download and transfer files in the board through [ampy](https://pypi.org/project/adafruit-ampy/).
 
 # Supported operations
 
 ## CoAP client
-* PUT
-* POST
-* GET
+
+- PUT
+- POST
+- GET
 
 ### Example of usage
-Here is an example using the CoAP client functionality to send requests and receive responses. (this example is part of [examples/pycom_wifi_coap_client.py](https://github.com/insighiot/microCoAPy/blob/master/examples/pycom_wifi_coap_client.py))
 
+Here is an example using the CoAP client functionality to send requests and receive responses. (this example is part of [examples/pycom_wifi_coap_client.py](https://github.com/insighiot/microCoAPy/blob/master/examples/pycom_wifi_coap_client.py))
 
 ```python
 import microcoapy
@@ -62,6 +82,7 @@ client.stop()
 ```
 
 #### Code explained
+
 Lets examine the above code and explain its purpose.
 
 ```python
@@ -72,9 +93,10 @@ def receivedMessageCallback(packet, sender):
 client = microcoapy.Coap()
 client.responseCallback = receivedMessageCallback
 ```
-During this step, the CoAP object get initialized. A callback handler is also created to get notifications from the server regarding our requests. __It is not used for incoming requests.__
 
-When instantiating new Coap object, a custom port can be optionally configured: *client = microcoapy.Coap(5683)*.
+During this step, the CoAP object get initialized. A callback handler is also created to get notifications from the server regarding our requests. **It is not used for incoming requests.**
+
+When instantiating new Coap object, a custom port can be optionally configured: _client = microcoapy.Coap(5683)_.
 
 ```python
 client.start()
@@ -87,7 +109,7 @@ bytesTransferred = client.get(_SERVER_IP, _SERVER_PORT, "current/measure")
 print("[GET] Sent bytes: ", bytesTransferred)
 ```
 
-Having the socket ready, it is time to send our request. In this case we send a simple GET request to the specific address (ex. 192.168.1.2:5683). The [_get_](https://github.com/insighio/microCoAPy/wiki#getip-port-url) function returns the number of bytes that have been sent. So in case of error, 0 will be returned.  
+Having the socket ready, it is time to send our request. In this case we send a simple GET request to the specific address (ex. 192.168.1.2:5683). The [_get_](https://github.com/insighio/microCoAPy/wiki#getip-port-url) function returns the number of bytes that have been sent. So in case of error, 0 will be returned.
 
 ```python
 client.poll(2000)
@@ -101,14 +123,17 @@ If a packet gets received during that period of type that is an _ACK_ to our req
 client.stop()
 ```
 
-Finally, stop is called to gracefully close the socket. It is preferable to have a corresponding call of [_stop_](https://github.com/insighio/microCoAPy/wiki#stop) to each call of [_start_](https://github.com/insighio/microCoAPy/wiki#startport) function because in special cases such as when using mobile modems, the modem might stuck when running out of available sockets.  
+Finally, stop is called to gracefully close the socket. It is preferable to have a corresponding call of [_stop_](https://github.com/insighio/microCoAPy/wiki#stop) to each call of [_start_](https://github.com/insighio/microCoAPy/wiki#startport) function because in special cases such as when using mobile modems, the modem might stuck when running out of available sockets.
 
 To send POST or PUT message replace the call of _get_ function with:
+
 ```python
 bytesTransferred = client.put(_SERVER_IP, _SERVER_PORT, "led/turnOn", "test",
                                  None, microcoapy.COAP_CONTENT_FORMAT.COAP_TEXT_PLAIN)
 ```
+
 or
+
 ```python
 bytesTransferred = client.post(_SERVER_IP, _SERVER_PORT, "led/turnOn", "test",
                                  None, microcoapy.COAP_CONTENT_FORMAT.COAP_TEXT_PLAIN)
@@ -117,6 +142,7 @@ bytesTransferred = client.post(_SERVER_IP, _SERVER_PORT, "led/turnOn", "test",
 For details on the arguments please advice the [documentation](https://github.com/insighio/microCoAPy/wiki).
 
 ## CoAP server
+
 Starts a server and calls custom callbacks upon receiving an incoming request. The response needs to be defined by the user of the library.
 
 ### Example of usage
@@ -149,6 +175,7 @@ client.stop()
 ```
 
 #### Code explained
+
 Lets examine the above code and explain its purpose. For details on [_start_](https://github.com/insighio/microCoAPy/wiki#startport) and [_stop_](https://github.com/insighio/microCoAPy/wiki#stop) functions advice the previous paragraph of the client example.
 
 ```python
@@ -161,7 +188,7 @@ def measureCurrent(packet, senderIp, senderPort):
 client.addIncomingRequestCallback('current/measure', measureCurrent)
 ```
 
-This is the main step to prepare the CoAP instance to behave as a server: receive and handle requests. First we create a function _measureCurrent_ that takes as arguments the incoming packet, the sender IP and Port. This function will  be used as a callback and will be triggered every time a specific URI path is provided in the incoming request.
+This is the main step to prepare the CoAP instance to behave as a server: receive and handle requests. First we create a function _measureCurrent_ that takes as arguments the incoming packet, the sender IP and Port. This function will be used as a callback and will be triggered every time a specific URI path is provided in the incoming request.
 
 This URL is defined upon registering the callback to the CoAP instance by calling [_addIncomingRequestCallback_](https://github.com/insighio/microCoAPy/wiki#addincomingrequestcallbackrequesturl-callback) function. After this call, if a CoAP GET/PUT/POST packet is received with URI path: coap://<IP>/current/measure , the callback will be triggered.
 
@@ -176,19 +203,21 @@ while time.ticks_diff(time.ticks_ms(), start_time) < timeoutMs:
     client.poll(60000)
 ```
 
-Finally, since the functions [_loop_](https://github.com/insighio/microCoAPy/wiki#loopblocking) and [_poll_](https://github.com/insighio/microCoAPy/wiki#polltimeoutms-pollperiodms) __can handle a since packet per run__, we wrap its call to a while loop and wait for incoming messages.
+Finally, since the functions [_loop_](https://github.com/insighio/microCoAPy/wiki#loopblocking) and [_poll_](https://github.com/insighio/microCoAPy/wiki#polltimeoutms-pollperiodms) **can handle a since packet per run**, we wrap its call to a while loop and wait for incoming messages.
 
 ## Custom sockets
-By using default functions __microcoapy.Coap().start()__ and __microcoapy.Coap().stop()__ the Coap library handles the creation of a  UDP socket from **usocket module** at the default port 5683 (if no other is defined when Coap object gets instantiated).
+
+By using default functions **microcoapy.Coap().start()** and **microcoapy.Coap().stop()** the Coap library handles the creation of a UDP socket from **usocket module** at the default port 5683 (if no other is defined when Coap object gets instantiated).
 
 If this socket type is not the appropriate for your project, custom socket instances can be used instead.
 
 Lets consider the case of supporting an external GSM modem connected via Serial on the board and that there is no direct support of this modem from default modules like **network.LTE**. In this case there is no guarranty that a typical UDP socket from usocket module will be functional. Thus, a custom socket instance needs to be created.
 
 The custom socket needs to implement the functions:
-* sendto(self, bytes, address) : returns the number of bytes transmitted
-* recvfrom(self, bufsize): returns a byte array
-* setblocking(self, flag)
+
+- sendto(self, bytes, address) : returns the number of bytes transmitted
+- recvfrom(self, bufsize): returns a byte array
+- setblocking(self, flag)
 
 Example:
 
@@ -228,11 +257,12 @@ client.setCustomSocket(customSocket)
 
 ## Pycom custom socket based on AT commands
 
-Since most of the implementations of NBIoT networks are based on IPv6, it was essential to move to a custom implementation of UDP socket, as Pycom do not yet support natively IPv6 sockets. Thus, in [examples/pycom/nbiot/pycom_at_socket.py](https://github.com/insighio/microCoAPy/blob/master/examples/pycom/nbiot/pycom_at_socket.py) you can find a complete implementation of a sample socket that directly uses Sequans AT commands. 
+Since most of the implementations of NBIoT networks are based on IPv6, it was essential to move to a custom implementation of UDP socket, as Pycom do not yet support natively IPv6 sockets. Thus, in [examples/pycom/nbiot/pycom_at_socket.py](https://github.com/insighio/microCoAPy/blob/master/examples/pycom/nbiot/pycom_at_socket.py) you can find a complete implementation of a sample socket that directly uses Sequans AT commands.
 
 NOTE: The socket to work without limitations needs one of the following Pycom firmwares:
-* [Pygate Firmware Release v1.20.2.rc11](https://github.com/pycom/pycom-micropython-sigfox/releases/tag/v1.20.2.rc11_pygate) (or newer)
-* [Firmware Release v1.20.2.r1](https://github.com/pycom/pycom-micropython-sigfox/releases/tag/v1.20.2.r1) (or newer)
+
+- [Pygate Firmware Release v1.20.2.rc11](https://github.com/pycom/pycom-micropython-sigfox/releases/tag/v1.20.2.rc11_pygate) (or newer)
+- [Firmware Release v1.20.2.r1](https://github.com/pycom/pycom-micropython-sigfox/releases/tag/v1.20.2.r1) (or newer)
 
 # Beta features under implementation or evaluation
 
@@ -258,8 +288,8 @@ client.debug = False
 
 # Future work
 
-* Since this library is quite fresh, the next period will be full of testing.
-* enhancments on funtionality as needed
+- Since this library is quite fresh, the next period will be full of testing.
+- enhancments on funtionality as needed
 
 # Issues and contributions
 
