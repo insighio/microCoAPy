@@ -1,0 +1,18 @@
+{
+  "urls": [
+    ["microcoapy/__init__.py", "microcoapy/__init__.py"],
+    ["microcoapy/coap_packet.py", "microcoapy/coap_packet.py"],
+    ["microcoapy/microcoapy.py", "microcoapy/microcoapy.py"],
+    ["microcoapy/coap_macros.py", "microcoapy/coap_macros.py"],
+    ["microcoapy/coap_reader.py", "microcoapy/coap_reader.py"],
+    ["microcoapy/coap_option.py", "microcoapy/coap_option.py"],
+    ["microcoapy/coap_writer.py", "microcoapy/coap_writer.py"]
+  ],
+  "deps": [
+    ["socket", "latest"],
+    ["os", "latest"],
+    ["time", "latest"],
+    ["binascii", "latest"]
+  ],
+  "version": "0.5.1"
+}

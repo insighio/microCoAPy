@@ -13,6 +13,8 @@ try:
 except ImportError:
     import utime as time
 
+import binascii
+
 from . import coap_macros as macros
 from .coap_packet import CoapPacket
 
@@ -21,8 +23,6 @@ from .coap_reader import parsePacketOptionsAndPayload
 from .coap_writer import writePacketHeaderInfo
 from .coap_writer import writePacketOptions
 from .coap_writer import writePacketPayload
-
-import binascii
 
 
 class Coap:
