@@ -1,9 +1,18 @@
 try:
-    import usocket as socket
+    import socket
 except ImportError:
-    pass
-import uos
-import utime as time
+    import usocket as socket
+
+try:
+    import os
+except ImportError:
+    import uos as os
+
+try:
+    import time
+except ImportError:
+    import utime as time
+
 from . import coap_macros as macros
 from .coap_packet import CoapPacket
 
@@ -15,11 +24,9 @@ from .coap_writer import writePacketPayload
 
 import binascii
 
+
 class Coap:
-    TRANSMISSION_STATE = macros.enum(
-        STATE_IDLE = 0,
-        STATE_SEPARATE_ACK_RECEIVED_WAITING_DATA = 1
-    )
+    TRANSMISSION_STATE = macros.enum(STATE_IDLE=0, STATE_SEPARATE_ACK_RECEIVED_WAITING_DATA=1)
 
     def __init__(self):
         self.debug = True
@@ -31,7 +38,7 @@ class Coap:
         self.state = self.TRANSMISSION_STATE.STATE_IDLE
         self.isCustomSocket = False
 
-        #beta flags
+        # beta flags
         self.discardRetransmissions = False
         self.lastPacketStr = ""
 
@@ -43,7 +50,7 @@ class Coap:
     # port: the local port to be used.
     def start(self, port=macros._COAP_DEFAULT_PORT):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.bind(('', port))
+        self.sock.bind(("", port))
 
     # Stop and destroy the socket that has been created by
     # a previous call of 'start' function
@@ -74,7 +81,7 @@ class Coap:
         if coapPacket.content_format != macros.COAP_CONTENT_FORMAT.COAP_NONE:
             optionBuffer = bytearray(2)
             optionBuffer[0] = (coapPacket.content_format & 0xFF00) >> 8
-            optionBuffer[1] = (coapPacket.content_format & 0x00FF)
+            optionBuffer[1] = coapPacket.content_format & 0x00FF
             coapPacket.addOption(macros.COAP_OPTION_NUMBER.COAP_CONTENT_FORMAT, optionBuffer)
 
         if (coapPacket.query is not None) and (len(coapPacket.query) > 0):
@@ -100,11 +107,12 @@ class Coap:
             if status > 0:
                 status = coapPacket.messageid
 
-            self.log('Packet sent. messageid: ' + str(status))
+            self.log("Packet sent. messageid: " + str(status))
         except Exception as e:
             status = 0
-            print('Exception while sending packet...')
+            print("Exception while sending packet...")
             import sys
+
             sys.print_exception(e)
 
         return status
@@ -124,7 +132,7 @@ class Coap:
         self.state = self.TRANSMISSION_STATE.STATE_IDLE
         # messageId field: 16bit -> 0-65535
         # urandom to generate 2 bytes
-        randBytes = uos.urandom(2)
+        randBytes = os.urandom(2)
         packet.messageid = (randBytes[0] << 8) | randBytes[1]
         packet.setUriHost(ip)
         packet.setUriPath(url)
@@ -144,25 +152,53 @@ class Coap:
 
         return self.sendPacket(ip, port, packet)
 
-    #Confirmable
+    # Confirmable
     def get(self, ip, port, url, token=bytearray()):
-        return self.send(ip, port, url, macros.COAP_TYPE.COAP_CON, macros.COAP_METHOD.COAP_GET, token, None, macros.COAP_CONTENT_FORMAT.COAP_NONE, None)
+        return self.send(
+            ip, port, url, macros.COAP_TYPE.COAP_CON, macros.COAP_METHOD.COAP_GET, token, None, macros.COAP_CONTENT_FORMAT.COAP_NONE, None
+        )
 
-    def put(self, ip, port, url, payload=bytearray(), query_option=None, content_format=macros.COAP_CONTENT_FORMAT.COAP_NONE, token=bytearray()):
-        return self.send(ip, port, url, macros.COAP_TYPE.COAP_CON, macros.COAP_METHOD.COAP_PUT, token, payload, content_format, query_option)
+    def put(
+        self, ip, port, url, payload=bytearray(), query_option=None, content_format=macros.COAP_CONTENT_FORMAT.COAP_NONE, token=bytearray()
+    ):
+        return self.send(
+            ip, port, url, macros.COAP_TYPE.COAP_CON, macros.COAP_METHOD.COAP_PUT, token, payload, content_format, query_option
+        )
 
-    def post(self, ip, port, url, payload=bytearray(), query_option=None, content_format=macros.COAP_CONTENT_FORMAT.COAP_NONE, token=bytearray()):
-        return self.send(ip, port, url, macros.COAP_TYPE.COAP_CON, macros.COAP_METHOD.COAP_POST, token, payload, content_format, query_option)
+    def post(
+        self, ip, port, url, payload=bytearray(), query_option=None, content_format=macros.COAP_CONTENT_FORMAT.COAP_NONE, token=bytearray()
+    ):
+        return self.send(
+            ip, port, url, macros.COAP_TYPE.COAP_CON, macros.COAP_METHOD.COAP_POST, token, payload, content_format, query_option
+        )
 
-    #non Confirmable
+    # non Confirmable
     def getNonConf(self, ip, port, url, token=bytearray()):
-        return self.send(ip, port, url, macros.COAP_TYPE.COAP_NONCON, macros.COAP_METHOD.COAP_GET, token, None, macros.COAP_CONTENT_FORMAT.COAP_NONE, None)
+        return self.send(
+            ip,
+            port,
+            url,
+            macros.COAP_TYPE.COAP_NONCON,
+            macros.COAP_METHOD.COAP_GET,
+            token,
+            None,
+            macros.COAP_CONTENT_FORMAT.COAP_NONE,
+            None,
+        )
 
-    def putNonConf(self, ip, port, url, payload=bytearray(), query_option=None, content_format=macros.COAP_CONTENT_FORMAT.COAP_NONE, token=bytearray()):
-        return self.send(ip, port, url, macros.COAP_TYPE.COAP_NONCON, macros.COAP_METHOD.COAP_PUT, token, payload, content_format, query_option)
+    def putNonConf(
+        self, ip, port, url, payload=bytearray(), query_option=None, content_format=macros.COAP_CONTENT_FORMAT.COAP_NONE, token=bytearray()
+    ):
+        return self.send(
+            ip, port, url, macros.COAP_TYPE.COAP_NONCON, macros.COAP_METHOD.COAP_PUT, token, payload, content_format, query_option
+        )
 
-    def postNonConf(self, ip, port, url, payload=bytearray(), query_option=None, content_format=macros.COAP_CONTENT_FORMAT.COAP_NONE, token=bytearray()):
-        return self.send(ip, port, url, macros.COAP_TYPE.COAP_NONCON, macros.COAP_METHOD.COAP_POST, token, payload, content_format, query_option)
+    def postNonConf(
+        self, ip, port, url, payload=bytearray(), query_option=None, content_format=macros.COAP_CONTENT_FORMAT.COAP_NONE, token=bytearray()
+    ):
+        return self.send(
+            ip, port, url, macros.COAP_TYPE.COAP_NONCON, macros.COAP_METHOD.COAP_POST, token, payload, content_format, query_option
+        )
 
     def handleIncomingRequest(self, requestPacket, sourceIp, sourcePort):
         url = ""
@@ -170,7 +206,7 @@ class Coap:
             if (opt.number == macros.COAP_OPTION_NUMBER.COAP_URI_PATH) and (len(opt.buffer) > 0):
                 if url != "":
                     url += "/"
-                url += opt.buffer.decode('unicode_escape')
+                url += opt.buffer.decode("unicode_escape")
 
         urlCallback = None
         if url != "":
@@ -180,10 +216,16 @@ class Coap:
             if self.responseCallback:
                 # The incoming request may be a response, let the responseCallback handle it.
                 return False
-            print('Callback for url [', url, "] not found")
-            self.sendResponse(sourceIp, sourcePort, requestPacket.messageid,
-                              None, macros.COAP_RESPONSE_CODE.COAP_NOT_FOUND,
-                              macros.COAP_CONTENT_FORMAT.COAP_NONE, requestPacket.token)
+            print("Callback for url [", url, "] not found")
+            self.sendResponse(
+                sourceIp,
+                sourcePort,
+                requestPacket.messageid,
+                None,
+                macros.COAP_RESPONSE_CODE.COAP_NOT_FOUND,
+                macros.COAP_CONTENT_FORMAT.COAP_NONE,
+                requestPacket.token,
+            )
 
         else:
             urlCallback(requestPacket, sourceIp, sourcePort)
@@ -196,10 +238,10 @@ class Coap:
             return (None, None)
 
     def parsePacketToken(self, buffer, packet):
-        if (packet.tokenLength == 0):
+        if packet.tokenLength == 0:
             packet.token = None
-        elif (packet.tokenLength <= 8):
-            packet.token = buffer[4:4+packet.tokenLength]
+        elif packet.tokenLength <= 8:
+            packet.token = buffer[4 : 4 + packet.tokenLength]
         else:
             (tempBuffer, tempRemoteAddress) = self.readBytesFromSocket(macros._BUF_MAX_SIZE - bufferLen)
             if tempBuffer is not None:
@@ -246,18 +288,23 @@ class Coap:
 
             if not self.isServer or not self.handleIncomingRequest(packet, remoteAddress[0], remoteAddress[1]):
                 # To handle cases of Separate response (rfc7252 #5.2.2)
-                if packet.type == macros.COAP_TYPE.COAP_ACK and\
-                    packet.method == macros.COAP_METHOD.COAP_EMPTY_MESSAGE:
-                      self.state = self.TRANSMISSION_STATE.STATE_SEPARATE_ACK_RECEIVED_WAITING_DATA
-                      return False
+                if packet.type == macros.COAP_TYPE.COAP_ACK and packet.method == macros.COAP_METHOD.COAP_EMPTY_MESSAGE:
+                    self.state = self.TRANSMISSION_STATE.STATE_SEPARATE_ACK_RECEIVED_WAITING_DATA
+                    return False
                 # case of piggybacked response where the response is in the ACK (rfc7252 #5.2.1)
                 # or the data of a separate message
                 else:
                     if self.state == self.TRANSMISSION_STATE.STATE_SEPARATE_ACK_RECEIVED_WAITING_DATA:
                         self.state = self.TRANSMISSION_STATE.STATE_IDLE
-                        self.sendResponse(remoteAddress[0], remoteAddress[1], packet.messageid,
-                                        None, macros.COAP_TYPE.COAP_ACK,
-                                        macros.COAP_CONTENT_FORMAT.COAP_NONE, packet.token)
+                        self.sendResponse(
+                            remoteAddress[0],
+                            remoteAddress[1],
+                            packet.messageid,
+                            None,
+                            macros.COAP_TYPE.COAP_ACK,
+                            macros.COAP_CONTENT_FORMAT.COAP_NONE,
+                            packet.token,
+                        )
                     if self.responseCallback is not None:
                         self.responseCallback(packet, remoteAddress)
             return True
@@ -269,6 +316,7 @@ class Coap:
         status = False
         while not status:
             status = self.loop(False)
-            if (time.ticks_diff(time.ticks_ms(), start_time) >= timeoutMs): break
+            if time.ticks_diff(time.ticks_ms(), start_time) >= timeoutMs:
+                break
             time.sleep_ms(pollPeriodMs)
         return status
